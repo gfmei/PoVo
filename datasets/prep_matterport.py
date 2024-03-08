@@ -15,7 +15,7 @@ def remove_items(test_list, item):
 
 
 def obtain_intr_extr_matterport(file):
-    '''Obtain the intrinsic and extrinsic parameters of Matterport3D.'''
+    """Obtain the intrinsic and extrinsic parameters of Matterport3D."""
     lines = file.readlines()
     intrinsics = []
     extrinsics = []
