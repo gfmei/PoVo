@@ -194,7 +194,6 @@ def generate_3d_data(num_classes=160, split='test'):
     scene_list = process_txt('./meta_data/scenes_{}.txt'.format(split))
     #####################################
     os.makedirs(out_dir, exist_ok=True)
-
     # obtain label mapping for new number of classes
     mapping, label_all, label_name = label_mapping(num_classes)
     output_file = '/storage2/TEV/datasets/Matterport/matterport_3d_{}/{}_class_name.txt'.format(num_classes, split)
@@ -205,10 +204,8 @@ def generate_3d_data(num_classes=160, split='test'):
     for scene in scene_list:
         files = files + glob.glob(os.path.join(matterport_path, scene, 'region_segmentations', '*.ply'))
 
-    p = mp.Pool(processes=mp.cpu_count())
-    p.map(process_one_scene_from_pcd, files, num_classes, mapping, out_dir)
-    p.close()
-    p.join()
+    with mp.Pool(processes=mp.cpu_count()) as p:
+        p.map(process_one_scene_from_pcd, files, num_classes, mapping, out_dir)
 
 
 if __name__ == '__main__':
