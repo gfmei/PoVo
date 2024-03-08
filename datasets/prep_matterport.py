@@ -5,6 +5,9 @@ import os
 import cv2
 import imageio
 import numpy as np
+import pandas as pd
+import plyfile
+import torch
 from tqdm import tqdm
 
 from data_util import adjust_intrinsic
@@ -52,6 +55,63 @@ def process_txt(filename):
         lines = file.readlines()
         lines = [line.rstrip() for line in lines]
     return lines
+
+
+def label_mapping(num_classes=160, tsv_file_root=None):
+    #####################################
+    if tsv_file_root is None:
+        tsv_file_root = './meta_data/category_mapping.tsv'
+    category_mapping = pd.read_csv(tsv_file_root, sep='\t', header=0)
+    # obtain label mapping for new number of classes
+    label_name = []
+    label_id = []
+    label_all = category_mapping['nyuClass'].tolist()
+    eliminated_list = ['void', 'unknown']
+    mapping = np.zeros(len(label_all) + 1, dtype=int)  # mapping from category id
+    instance_count = category_mapping['count'].tolist()
+    ins_count_list = []
+    counter = 1
+    flag_stop = False
+    for i, x in enumerate(label_all):
+        if not flag_stop and isinstance(x, str) and x not in label_name and x not in eliminated_list:
+            label_name.append(x)
+            label_id.append(counter)
+            mapping[i + 1] = counter
+            counter += 1
+            ins_count_list.append(instance_count[i])
+            if counter == num_classes + 1:
+                flag_stop = True
+        elif isinstance(x, str) and x in label_name:
+            # find the index of the previously appeared object name
+            mapping[i + 1] = label_name.index(x) + 1
+
+    return mapping, label_all, label_name
+
+
+def process_one_scene_from_pcd(fn, num_classes, mapping, out_dir):
+    '''process one scene.'''
+    scene_name = fn.split('/')[-3]
+    region_name = fn.split('/')[-1].split('.')[0]
+    a = plyfile.PlyData().read(fn)
+    v = np.array([list(x) for x in a.elements[0]])
+    coords = np.ascontiguousarray(v[:, :3])
+    colors = np.ascontiguousarray(v[:, -3:]) / 127.5 - 1
+
+    category_id = a['face']['category_id']
+    category_id[category_id == -1] = 0
+    mapped_labels = mapping[category_id]
+    triangles = a['face']['vertex_indices']
+    vertex_labels = np.zeros((coords.shape[0], num_classes + 1), dtype=np.int32)
+    # calculate per-vertex labels
+    for row_id in range(triangles.shape[0]):
+        for i in range(3):
+            vertex_labels[triangles[row_id][i], mapped_labels[row_id]] += 1
+
+    vertex_labels = np.argmax(vertex_labels, axis=1)
+    vertex_labels[vertex_labels == 0] = 256
+    vertex_labels -= 1
+    torch.save((coords, colors, vertex_labels), os.path.join(out_dir, scene_name + '_' + region_name + '.pth'))
+    print('Preprocessing file: {}'.format(fn))
 
 
 def process_one_scene_from_images(fn, scene, in_path, out_dir, img_dim, orig_img_dim):
@@ -119,3 +179,37 @@ def generate_2d_data(split='test'):
         # Use multiprocessing to process files in parallel
         with mp.Pool(processes=mp.cpu_count()) as p:
             p.map(process_one_scene_from_images, files, scene, in_path, out_dir, img_dim, original_img_dim)
+
+
+def generate_3d_data(num_classes=160, split='test'):
+    # ! YOU NEED TO MODIFY THE FOLLOWING
+    """
+    :param num_classes: 40 | 80 | 160 # define the number of classes
+    :param split: 'train' | 'val' | 'test'
+    :return:
+    """
+    #####################################
+    out_dir = '/storage2/TEV/datasets/Matterport/matterport_3d_{}/{}'.format(num_classes, split)
+    matterport_path = '/storage2/TEV/datasets/Matterport/scans'  # downloaded original matterport data
+    scene_list = process_txt('./meta_data/scenes_{}.txt'.format(split))
+    #####################################
+    os.makedirs(out_dir, exist_ok=True)
+
+    # obtain label mapping for new number of classes
+    mapping, label_all, label_name = label_mapping(num_classes)
+    output_file = '/storage2/TEV/datasets/Matterport/matterport_3d_{}/{}_class_name.txt'.format(num_classes, split)
+    with open(output_file, "w") as file:
+        for item in label_name:
+            file.write(item + "\n")
+    files = []
+    for scene in scene_list:
+        files = files + glob.glob(os.path.join(matterport_path, scene, 'region_segmentations', '*.ply'))
+
+    p = mp.Pool(processes=mp.cpu_count())
+    p.map(process_one_scene_from_pcd, files, num_classes, mapping, out_dir)
+    p.close()
+    p.join()
+
+
+if __name__ == '__main__':
+    generate_3d_data(160, 'test')

@@ -4,26 +4,23 @@ Preprocessing Script for ScanNet 20/200
 Author: Xiaoyang Wu (xiaoyang.wu.cs@gmail.com)
 Please cite our work if the code is helpful to you.
 """
-import random
+import argparse
+# import glob
+import json
+import multiprocessing as mp
+import os
 import sys
 import warnings
 from concurrent.futures import ProcessPoolExecutor
 from itertools import repeat
-from os.path import join
 
-import torch
-from glob2 import glob
-import multiprocessing as mp
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-import os
-import argparse
-# import glob
-import json
-import plyfile
 import numpy as np
 import pandas as pd
+import plyfile
+import torch
+from glob2 import glob
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Load external constants
 sys.path.append(os.path.dirname(__file__))
