@@ -11,6 +11,8 @@ from hydra import initialize, compose
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from datasets.meta_data.label_constants import MATTERPORT_LABELS_160
+from datasets.voxelizer import Voxelizer
 from libs.mask_lib import img_feats_interpolate
 from libs.o3d_util import normal_estimation
 from models.modules import CLIPMeta, PatchCLIP, CLIPText
@@ -76,6 +78,15 @@ def get_matterport_camera_data(data_path, data_root_2d, locs_in, split):
 
 
 class Matterport(Dataset):
+
+    # Augmentation arguments
+    SCALE_AUGMENTATION_BOUND = (0.9, 1.1)
+    ROTATION_AUGMENTATION_BOUND = ((-np.pi / 64, np.pi / 64), (-np.pi / 64, np.pi / 64), (-np.pi, np.pi))
+    TRANSLATION_AUGMENTATION_RATIO_BOUND = ((-0.2, 0.2), (-0.2, 0.2), (0, 0))
+    ELASTIC_DISTORT_PARAMS = ((0.2, 0.4), (0.8, 1.6))
+    ROTATION_AXIS = 'z'
+    LOCFEAT_IDX = 2
+
     def __init__(self, root='data', voxel_size=0.05, img_size=(640, 512),
                  vis_name='llava',
                  cut_num_pixel_boundary=10,  # do not use the features on the image boundary
@@ -104,6 +115,15 @@ class Matterport(Dataset):
             visibility_threshold=visibility_threshold,
             cut_bound=cut_num_pixel_boundary)
 
+        self.voxel_size = voxel_size
+        self.voxelizer = Voxelizer(
+            voxel_size=voxel_size,
+            clip_bound=None,
+            use_augmentation=True,
+            scale_augmentation_bound=self.SCALE_AUGMENTATION_BOUND,
+            rotation_augmentation_bound=self.ROTATION_AUGMENTATION_BOUND,
+            translation_augmentation_ratio_bound=self.TRANSLATION_AUGMENTATION_RATIO_BOUND)
+
         self.vis_name = vis_name
         initialize(config_path="../configs", version_base=None)
         cfg = compose(config_name='cfg_scannet_clip.yaml')
@@ -127,10 +147,15 @@ class Matterport(Dataset):
         self.feat_dim = self.vis_encoder.clip_model.projection_dim
         self.img_size = img_size
 
+        ids2cat = list(MATTERPORT_LABELS_160)
+        ids2cat.append('otherfurniture')
+        self.lb_emd = self.vis_encoder.text_embedding(ids2cat)
+
     def __getitem__(self, item):
         data_path = self.data_paths[item]
         data = torch.load(data_path)
         raw_points = data[0]
+        raw_colors = data[1]
         raw_labels = data[-1]
         # obtain all camera views related information (specificially for Matterport)
         intrinsics, poses, img_dirs, scene_id, num_img = get_matterport_camera_data(
@@ -169,7 +194,7 @@ class Matterport(Dataset):
 
             imgi_feature = self.vis_encoder(image, flag=False).clone().to(self.device, dtype=torch.float32)
             new_names = self.vis_encoder.get_image_level_names(image)
-            # print(new_names)
+
             cls_names.update(new_names)
             imgi_feature = imgi_feature.permute(2, 0, 1)
             if self.img_size[0] != imgi_feature.shape[1] or self.img_size[1] != imgi_feature.shape[0]:
@@ -193,7 +218,7 @@ class Matterport(Dataset):
         feat_bank = sum_features / counter
         point_ids = torch.unique(vis_id.nonzero(as_tuple=False)[:, 0])
         points = raw_points[point_ids]
-        # normals = normal_estimation(points, knn=33)
+        normals = normal_estimation(points, knn=33)
         # colors = raw_colors[point_ids]
         # label_set = set(raw_labels.tolist())
         gt_label = raw_labels[point_ids]
@@ -201,10 +226,8 @@ class Matterport(Dataset):
         # num_pred = len(cls_names)
         # gt_set = set(gt_label.tolist())
         # print([ids2cat[d] for d in gt_set], cls_names)
-        # lb_emd = self.vis_encoder.text_embedding([ids2cat[lb] for lb in label_set])
         llava_emd = self.vis_encoder.text_embedding(list(cls_names))
         cls_names = list(cls_names)
-        normals = normal_estimation(points, knn=33)
         return points, feat_bank[point_ids], normals, cls_names, self.lb_emd[gt_label], llava_emd, gt_label
 
 
