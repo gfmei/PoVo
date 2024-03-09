@@ -232,19 +232,6 @@ class ScanNet(Dataset):
         return len(self.scannet_file_list)
 
 
-def label_revise(gt_cls, pred_cls, S):
-    X = copy.deepcopy(gt_cls)
-    Y = pred_cls
-    val, index = torch.max(S, dim=1)  # Max value and index in Y for each element in X
-    threshold = 0.6  # Threshold for replacement
-
-    # Assuming val and index are tensors, convert val to a list for direct comparison
-    val_list = val.tolist()
-    # Replace elements in X based on the threshold
-    X_updated = [Y[index[i].item()] if val_list[i] > threshold else X[i] for i in range(len(X))]
-    return X_updated
-
-
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
     from libs.vis_utils import creat_labeled_point_cloud, get_colored_point_cloud_pca_sep
