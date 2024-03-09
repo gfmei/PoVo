@@ -78,7 +78,6 @@ def get_matterport_camera_data(data_path, data_root_2d, locs_in, split):
 
 
 class Matterport(Dataset):
-
     # Augmentation arguments
     SCALE_AUGMENTATION_BOUND = (0.9, 1.1)
     ROTATION_AUGMENTATION_BOUND = ((-np.pi / 64, np.pi / 64), (-np.pi / 64, np.pi / 64), (-np.pi, np.pi))
