@@ -205,8 +205,7 @@ class Matterport(Dataset):
         llava_emd = self.vis_encoder.text_embedding(list(cls_names))
         cls_names = list(cls_names)
         normals = normal_estimation(points, knn=33)
-        return points, feat_bank[point_ids], normals, cls_names, self.lb_emd[
-            gt_label], llava_emd, gt_label
+        return points, feat_bank[point_ids], normals, cls_names, self.lb_emd[gt_label], llava_emd, gt_label
 
 
 def get_args():
