@@ -9,9 +9,10 @@ import torch
 from PIL import Image
 from hydra import initialize, compose
 from torch.utils.data import Dataset
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 from libs.mask_lib import img_feats_interpolate
+from libs.o3d_util import normal_estimation
 from models.modules import CLIPMeta, PatchCLIP, CLIPText
 from transform import PointCloudToImageMapper
 
@@ -128,14 +129,15 @@ class Matterport(Dataset):
 
     def __getitem__(self, item):
         data_path = self.data_paths[item]
-        locs_in = torch.load(data_path)[0]
+        data = torch.load(data_path)
+        raw_points = data[0]
+        raw_labels = data[-1]
         # obtain all camera views related information (specificially for Matterport)
         intrinsics, poses, img_dirs, scene_id, num_img = get_matterport_camera_data(
-            data_path, self.data_root_2d, locs_in, self.split)
+            data_path, self.data_root_2d, raw_points, self.split)
         # keep_features_in_memory = args.keep_features_in_memory
         # load 3D data (point cloud, color and the corresponding labels)
-        locs_in = torch.load(data_path)[0]
-        n_points = locs_in.shape[0]
+        n_points = raw_points.shape[0]
         if num_img == 0:
             print('no views inside {}'.format(scene_id))
             return 1
@@ -165,8 +167,7 @@ class Matterport(Dataset):
             if self.img_size[0] != image.size[0] or self.img_size[1] != image.size[1]:
                 image = image.resize(self.img_size)
 
-
-            imgi_feature = self.vis_encoder(image, flag=False).clone().to(device, dtype=torch.float32)
+            imgi_feature = self.vis_encoder(image, flag=False).clone().to(self.device, dtype=torch.float32)
             new_names = self.vis_encoder.get_image_level_names(image)
             # print(new_names)
             cls_names.update(new_names)
@@ -175,7 +176,7 @@ class Matterport(Dataset):
                 imgi_feature = img_feats_interpolate(imgi_feature, self.img_size[::-1], interpolate_type='nearest')
             # calculate the 3d-2d mapping based on the depth
             mapping = np.ones([n_points, 4], dtype=int)
-            mapping[:, 1:4] = self.point2img_mapper.compute_mapping(pose, locs_in, depth, intr)
+            mapping[:, 1:4] = self.point2img_mapper.compute_mapping(pose, raw_points, depth, intr)
             if mapping[:, 3].sum() == 0:  # no points corresponds to this image, skip
                 continue
             mapping = torch.from_numpy(mapping).to(self.device)
@@ -191,7 +192,7 @@ class Matterport(Dataset):
         counter[counter == 0] = 1e-5
         feat_bank = sum_features / counter
         point_ids = torch.unique(vis_id.nonzero(as_tuple=False)[:, 0])
-        points = locs_in[point_ids]
+        points = raw_points[point_ids]
         # normals = normal_estimation(points, knn=33)
         # colors = raw_colors[point_ids]
         # label_set = set(raw_labels.tolist())
@@ -203,7 +204,8 @@ class Matterport(Dataset):
         # lb_emd = self.vis_encoder.text_embedding([ids2cat[lb] for lb in label_set])
         llava_emd = self.vis_encoder.text_embedding(list(cls_names))
         cls_names = list(cls_names)
-        return points, feat_bank[point_ids], raw_normals[point_ids], cls_names, self.lb_emd[
+        normals = normal_estimation(points, knn=33)
+        return points, feat_bank[point_ids], normals, cls_names, self.lb_emd[
             gt_label], llava_emd, gt_label
 
 

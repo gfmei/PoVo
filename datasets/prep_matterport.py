@@ -166,7 +166,7 @@ def process_one_scene_from_images(fn, scene, in_path, out_dir, img_dim, orig_img
 def generate_2d_data(split='test'):
     # split: 'train' | 'val' | 'test'
     out_dir = '/storage2/TEV/datasets/Matterport/matterport_2d/'
-    in_path = '/storage2/TEV/datasets/Matterport/scans'  # downloaded original matterport data
+    in_path = '/storage2/TEV/datasets/Matterport/test_raw'  # downloaded original matterport data
     scene_list = process_txt('meta_data/matterport/scenes_{}.txt'.format(split))
     #####################################
     os.makedirs(out_dir, exist_ok=True)
@@ -190,7 +190,7 @@ def generate_3d_data(num_classes=160, split='test'):
     """
     #####################################
     out_dir = '/storage2/TEV/datasets/Matterport/matterport_3d_{}/{}'.format(num_classes, split)
-    matterport_path = '/storage2/TEV/datasets/Matterport/scans'  # downloaded original matterport data
+    matterport_path = '/storage2/TEV/datasets/Matterport/test_raw'  # downloaded original matterport data
     scene_list = process_txt('./meta_data/scenes_{}.txt'.format(split))
     #####################################
     os.makedirs(out_dir, exist_ok=True)
@@ -202,10 +202,10 @@ def generate_3d_data(num_classes=160, split='test'):
             file.write(item + "\n")
     files = []
     for scene in scene_list:
-        files = files + glob.glob(os.path.join(matterport_path, scene, 'region_segmentations', '*.ply'))
-
+        files = files + glob.glob(os.path.join(matterport_path, scene, scene, 'region_segmentations', '*.ply'))
+    args_list = [(fn, num_classes, mapping, out_dir) for fn in files]
     with mp.Pool(processes=mp.cpu_count()) as p:
-        p.map(process_one_scene_from_pcd, files, num_classes, mapping, out_dir)
+        p.starmap(process_one_scene_from_pcd, args_list)
 
 
 if __name__ == '__main__':
