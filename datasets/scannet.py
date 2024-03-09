@@ -16,13 +16,15 @@ from torch.utils.data import Dataset
 sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('../libs')
+sys.path.append('../datasets')
+sys.path.append('../models')
 from voxelizer import Voxelizer
-from datasets.data_util import make_intrinsic, adjust_intrinsic
+from data_util import make_intrinsic, adjust_intrinsic
 from clip_models.DINOv2 import DINOV2
 from libs.mask_lib import img_feats_interpolate
 from models.modules import CLIPMeta, CLIPText, PatchCLIP
-from datasets.meta_data.scannet200_constants import CLASS_LABELS_200
-from datasets.transform import PointCloudToImageMapper
+from meta_data.scannet200_constants import CLASS_LABELS_200
+from transform import PointCloudToImageMapper
 
 
 def get_intrinsic(img_dim, intrinsic_image_dim=None, intrinsic=None):
