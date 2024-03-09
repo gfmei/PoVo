@@ -1,0 +1,26 @@
+#defaults:
+#  - _self_
+#  - paths
+#  - dataset: scannet
+experiment:
+  name: llm_${dataset.name}
+  run: final
+  port: "12340"
+  batch_size: 2
+  num_workers: 4
+
+output_dir: ${paths.results}
+
+align_corners: False
+saliency: True
+model_name: dense_clip
+img_size: [320, 240]
+patch_sizes: [256, 128, 64]
+n_segments: 24
+patch_w1: 1.0
+patch_w2: 1.0
+patch_w3: 1.0
+strides: [2]
+interpolate_logits: True
+clip_model: laion/CLIP-ViT-B-32-laion2B-s34B-b79K
+# laion/CLIP-ViT-bigG-14-laion2B-39B-b160k
