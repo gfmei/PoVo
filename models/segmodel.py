@@ -13,7 +13,7 @@ def com_idf(lb_list):
     return torch.log(idf)
 
 
-class FrVot(nn.Module):
+class PoVot(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -5,7 +5,7 @@ import requests
 import torch
 from PIL import Image
 
-from libs.mask_lib import draw_k2_boxes
+from libs.lib_mask import draw_k2_boxes
 from llava.constants import (DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER,
                              IMAGE_TOKEN_INDEX)
 from llava.conversation import conv_templates
@@ -13,7 +13,7 @@ from llava.mm_utils import get_anyres_image_grid_shape, get_model_name_from_path
 from llava.model.builder import load_pretrained_model
 from llava.model.llava_arch import unpad_image
 from llava.utils import disable_torch_init
-from libs.mask_lib import get_boxed_images
+from libs.lib_mask import get_boxed_images
 
 
 def produce_conv(model, qs, conv_mode):

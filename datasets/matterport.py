@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from datasets.meta_data.label_constants import MATTERPORT_LABELS_160
 from datasets.voxelizer import Voxelizer
-from libs.mask_lib import img_feats_interpolate
+from libs.lib_mask import img_feats_interpolate
 from libs.o3d_util import normal_estimation
 from models.modules import CLIPMeta, PatchCLIP, CLIPText
 from transform import PointCloudToImageMapper

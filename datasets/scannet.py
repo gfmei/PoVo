@@ -21,7 +21,7 @@ sys.path.append('../models')
 from voxelizer import Voxelizer
 from data_util import make_intrinsic, adjust_intrinsic
 from clip_models.DINOv2 import DINOV2
-from libs.mask_lib import img_feats_interpolate
+from libs.lib_mask import img_feats_interpolate
 from models.modules import CLIPMeta, CLIPText, PatchCLIP
 from meta_data.scannet200_constants import CLASS_LABELS_200
 from transform import PointCloudToImageMapper

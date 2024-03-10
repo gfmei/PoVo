@@ -19,7 +19,7 @@ sys.path.append('../llava')
 from llava.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER
 from llava.conversation import conv_templates
 from llava.vlm_utils import get_image_category_from_llava, load_llava_model
-from libs.mask_lib import assign_region_feature_to_image, gen_masked_imgs, get_boxed_images
+from libs.lib_mask import assign_region_feature_to_image, gen_masked_imgs, get_boxed_images
 
 
 class CLIPText(nn.Module):
