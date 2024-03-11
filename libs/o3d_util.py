@@ -6,7 +6,7 @@ import trimesh
 try:
     import segmentator
 except Exception as e:
-    raise ImportError
+    pass
 
 
 def to_o3d_pcd(pcd, est_normal=False, radius=0.05):

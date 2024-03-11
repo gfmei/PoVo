@@ -14,8 +14,8 @@ def print_hi(knn=33):
     # To visualize the point cloud (optional)
     o3d.visualization.draw_geometries([pcd])
     mesh = generate_mesh_from_pcd(xyz, normal=None)
-    spts = get_super_point_cloud(mesh, xyz)
-    print(spts)
+    # spts = get_super_point_cloud(mesh, xyz)
+    # print(spts)
     mesh.show()
 
 

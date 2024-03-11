@@ -5,6 +5,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import ImageDraw
+from PIL import Image
+from PIL.Image import Resampling
+from skimage import img_as_ubyte
 from skimage.segmentation import slic
 
 
@@ -160,3 +163,17 @@ def draw_k2_boxes_with_gaps_pil(image, k=2, gap=2):
     # Display the image
     image.show()
     return image
+
+
+def get_masks_from_pil(image, n_seg=250):
+    image_np = np.array(image)
+    # Generate superpixels
+    segments = slic(image_np, n_segments=n_seg, compactness=10, sigma=1)
+    # Collect superpixel images
+    superpixel_images = []
+    for segment_id in np.unique(segments):
+        mask = segments == segment_id
+        masked_image = img_as_ubyte(mask[:, :, None] * image_np)
+        superpixel_images.append(Image.fromarray(masked_image))
+
+    return segments, superpixel_images
