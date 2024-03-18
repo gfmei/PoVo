@@ -19,7 +19,7 @@ sys.path.append('../llava')
 from llava.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER
 from llava.conversation import conv_templates
 from llava.vlm_utils import get_image_category_from_llava, load_llava_model
-from libs.lib_mask import assign_region_feature_to_image, gen_masked_imgs, get_boxed_images
+from libs.lib_mask import assign_region_feature_to_image, gen_masked_imgs, get_boxed_images, SamMaskGenerator
 
 
 class CLIPText(nn.Module):
@@ -41,7 +41,8 @@ class CLIPText(nn.Module):
         self.config = config
         self.to_PIL = T.ToPILImage()
         self.to_t = T.ToTensor()
-
+        if config.is_sam:
+            self.sam_generator = SamMaskGenerator(config.img_size, checkpoint_path=config.sam_model)
         self._set_model(config)
 
     @staticmethod
@@ -86,10 +87,21 @@ class CLIPText(nn.Module):
         out = torch.mean(out, dim=0)
         return out
 
-    def text_embedding(self, class_names: List[str]):
-        aug_embeddings = torch.stack([self._embed_label(label) for label in class_names])
+    def text_embedding(self, class_names: List[str], name_dict=None, return_dict=False):
+        aug_embeddings = list()
+        for label in class_names:
+            if return_dict:
+                if label not in name_dict:
+                    name_dict[label] = 1
+                else:
+                    name_dict[label] += 1
+            aug_embeddings.append(self._embed_label(label))
+
+        aug_embeddings = torch.stack(aug_embeddings, dim=0)
         # normalize vector
-        # aug_embeddings = aug_embeddings / aug_embeddings.norm(p=2, dim=-1, keepdim=True)
+        aug_embeddings = F.normalize(aug_embeddings, dim=-1)
+        if return_dict:
+            return aug_embeddings, name_dict
         return aug_embeddings
 
     def get_image_level_names(self, img):
@@ -113,14 +125,68 @@ class CLIPText(nn.Module):
                                                   conv.get_prompt(), image_size=None)
         return cls_names[0]
 
-    def forward(self, img, flag=True):
-        img_list, box_list = get_boxed_images(img, n_segments=self.config.n_segments, flag=flag)
-        # img_list = [img for img in img_list]
-        with torch.no_grad():  # Disable gradient calculation for inference
-            class_names = get_image_category_from_llava(img_list, self.tokenizer, self.model, self.image_processor,
-                                                        self.conv.get_prompt(), image_size=None)
-            # print('===============', class_names)
-            text_embeds = [F.normalize(self.text_embedding(class_name).mean(0), dim=-1) for class_name in class_names]
+    def forward(self, img, flag=-1, is_sep=True):
+        # Generate image list and bounding box list based on the SAM configuration
+        if self.config.is_sam:
+            img_list, box_list = self.sam_generator(img, flag=flag)
+        else:
+            img_list, box_list = get_boxed_images(img, n_segments=self.config.n_segments, flag=flag)
+
+        # Initialize dictionaries for class names, additional names, and probability names
+        cls_name_dict, add_name_dict, prob_name_dict = {}, {}, {}
+
+        if is_sep:
+            # Process each masked image and bounding box separately
+            with torch.no_grad():  # Disable gradient calculation for inference
+                text_embeds = []
+                count = 0
+                for mask, box in zip(img_list, box_list):
+                    class_names = get_image_category_from_llava(
+                        [mask], self.llava_tokenizer, self.model, self.image_processor, self.conv.get_prompt())
+                    for class_name in class_names:
+                        text_emd, cls_name_dict = self.text_embedding(class_name, cls_name_dict, True)
+                        if not prob_name_dict:
+                            text_embeds.append(text_emd.mean(0))
+                            # pred_name = class_name[0]
+                            add_name_dict, prob_name_dict = copy.deepcopy(cls_name_dict), copy.deepcopy(cls_name_dict)
+                        else:
+                            filtered_dict = {key: prob_name_dict.get(key, 0) for key in class_name}
+                            max_value_key = max(filtered_dict, key=filtered_dict.get)
+                            text_embeds.append(text_emd[class_name.index(max_value_key)])
+                            add_name_dict[max_value_key] = add_name_dict.get(max_value_key, 0) + 1
+                            prob_name_dict = {
+                                key: self.config.beta * prob_name_dict.get(key, 0) + 1.0 / (1.0 + cls_name_dict.get(
+                                    key, 0)) + 1.0 / (1.0 + add_name_dict.get(key, 0)) for key in cls_name_dict}
+                        text_emd, cls_name_dict = self.text_embedding(class_name, cls_name_dict, True)
+                        text_embeds.append(text_emd[0])
+                            # pred_name = max_value_key
+                    if flag >= 0:
+                        mask.save(f'scan_result/pcd{flag}_image{count}.png')
+                        output_file = f'scan_result/pcd{flag}_image_name{count}.txt'
+                        with open(output_file, "w") as file:
+                            file.write(str(class_names) + "\n")
+                        count += 1
+        else:
+            # Process all images together
+            with torch.no_grad():
+                class_names = get_image_category_from_llava(
+                    img_list, self.llava_tokenizer, self.model, self.image_processor, self.conv.get_prompt())
+                text_embeds = []
+                for class_name in class_names:
+                    text_emd, cls_name_dict = self.text_embedding(class_name, cls_name_dict, True)
+                    if not prob_name_dict:
+                        text_embeds.append(text_emd.mean(0))
+                        add_name_dict, prob_name_dict = copy.deepcopy(cls_name_dict), copy.deepcopy(cls_name_dict)
+                    else:
+                        filtered_dict = {key: prob_name_dict.get(key, 0) for key in class_name}
+                        max_value_key = max(filtered_dict, key=filtered_dict.get)
+                        text_embeds.append(text_emd[class_name.index(max_value_key)])
+                        add_name_dict[max_value_key] = add_name_dict.get(max_value_key, 0) + 1
+                        prob_name_dict = {
+                            key: self.config.beta * prob_name_dict.get(key, 0) + 1.0 / (1.0 + cls_name_dict.get(
+                                key, 0)) + 1.0 / (1.0 + add_name_dict.get(key, 0)) for key in cls_name_dict}
+
+        # Assign region features to image based on the bounding boxes and return them
         region_features = assign_region_feature_to_image(text_embeds, box_list, img.size)
         return region_features
 

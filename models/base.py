@@ -17,18 +17,18 @@ def clip_preprocess_batch(images):
     transform = Compose([
         Resize((224, 224)),
         ToTensor(),
-        Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
+        # Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
     ])
     return torch.stack([transform(image) for image in images])
 
 
 # Load your image
-image_path = 'path_to_your_image.jpg'
+image_path = 'test1.jpg'
 image = Image.open(image_path)
 image_np = np.array(image)
 
 # Generate superpixels
-segments, superpixel_images = get_masks_from_pil(image, n_seg=32)
+segments, superpixel_images = get_masks_from_pil(image, n_seg=16)
 # Preprocess all superpixel images at once
 preprocessed_batch = clip_preprocess_batch(superpixel_images).to(device)
 
@@ -39,7 +39,7 @@ with torch.no_grad():
 # Assuming batch_features holds the CLIP-encoded features for each superpixel
 
 # Example class descriptions
-class_descriptions = ['a photo of a cat', 'a photo of a dog']
+class_descriptions = ['a photo of a bag', 'a photo of a desk', 'a photo of a chair']
 text_tokens = clip.tokenize(class_descriptions).to(device)
 
 # Get text features for the descriptions
@@ -47,6 +47,7 @@ with torch.no_grad():
     text_features = model.encode_text(text_tokens)
 
 # Calculate similarity (here using cosine similarity)
+print(batch_features.shape, segments.shape)
 similarities = torch.matmul(batch_features, text_features.T)
 similarities = torch.softmax(similarities, dim=-1)
 
@@ -62,6 +63,4 @@ for segment_id, class_id in enumerate(np.unique(segments)):
 # Map classification results to colors
 segmented_image_rgb = label2rgb(segmented_image, image_np, bg_label=-1, kind='avg')
 
-# Convert to PIL Image for display
-segmented_image_pil = Image.fromarray((segmented_image_rgb * 255).astype(np.uint8))
-segmented_image_pil.show()
+

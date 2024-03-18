@@ -1,5 +1,7 @@
-import argparse
 import os
+import pickle
+import random
+import sys
 from glob import glob
 from os.path import join
 
@@ -11,12 +13,21 @@ from hydra import initialize, compose
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from datasets.meta_data.label_constants import MATTERPORT_LABELS_160
-from datasets.voxelizer import Voxelizer
+sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append('../libs')
+sys.path.append('../datasets')
+sys.path.append('../models')
+
+from data_util import custom_collate_fn
+from meta_data.label_constants import MATTERPORT_LABELS_160
+from voxelizer import Voxelizer
 from libs.lib_mask import img_feats_interpolate
+from libs.lib_utils import remove_repeat_words
 from libs.o3d_util import normal_estimation
 from models.modules import CLIPMeta, PatchCLIP, CLIPText
 from transform import PointCloudToImageMapper
+from models.segmodel import max_vote
 
 
 def obtain_intr_extr_matterport(scene):
@@ -48,7 +59,7 @@ def get_matterport_camera_data(data_path, data_root_2d, locs_in, split):
     bbox_h = locs_in.max(axis=0)
     building_name = data_path.split('/')[-1].split('_')[0]
     scene_id = data_path.split('/')[-1].split('.')[0]
-    scene = os.path.join(data_root_2d, building_name)
+    scene = os.path.join(data_root_2d, split, building_name)
     img_names, intrinsics, extrinsics = obtain_intr_extr_matterport(scene)
 
     cam_loc = extrinsics[:, :3, -1]
@@ -93,6 +104,7 @@ class Matterport(Dataset):
                  visibility_threshold=0.02,
                  depth_scale=4000.0,
                  num_classes=160,
+                 is_orig=True,
                  device='auto'):
         super(Matterport, self).__init__()
 
@@ -118,14 +130,14 @@ class Matterport(Dataset):
         self.voxelizer = Voxelizer(
             voxel_size=voxel_size,
             clip_bound=None,
-            use_augmentation=True,
+            use_augmentation=False,
             scale_augmentation_bound=self.SCALE_AUGMENTATION_BOUND,
             rotation_augmentation_bound=self.ROTATION_AUGMENTATION_BOUND,
             translation_augmentation_ratio_bound=self.TRANSLATION_AUGMENTATION_RATIO_BOUND)
 
         self.vis_name = vis_name
         initialize(config_path="../configs", version_base=None)
-        cfg = compose(config_name='cfg_scannet_clip.yaml')
+        cfg = compose(config_name='cfg_matterport_clip.yaml')
 
         if vis_name == 'denseclip':
             self.vis_encoder = CLIPMeta(cfg)
@@ -148,18 +160,21 @@ class Matterport(Dataset):
 
         ids2cat = list(MATTERPORT_LABELS_160)
         ids2cat.append('otherfurniture')
-        self.lb_emd = self.vis_encoder.text_embedding(ids2cat)
+        self.lb_emd = self.vis_encoder.text_embedding(ids2cat).to(self.device, dtype=torch.float16)
+        self.is_orig = is_orig
 
     def __getitem__(self, item):
         data_path = self.data_paths[item]
         data = torch.load(data_path)
         raw_points = data[0]
-        raw_colors = data[1]
+        # raw_colors = data[1]
         raw_labels = data[-1]
+        # raw_points, raw_colors, raw_labels = self.voxelizer.voxelize(raw_points, raw_colors, raw_labels)
         # obtain all camera views related information (specificially for Matterport)
         intrinsics, poses, img_dirs, scene_id, num_img = get_matterport_camera_data(
             data_path, self.data_root_2d, raw_points, self.split)
         # keep_features_in_memory = args.keep_features_in_memory
+        raw_labels[raw_labels == 255] = 160
         # load 3D data (point cloud, color and the corresponding labels)
         n_points = raw_points.shape[0]
         if num_img == 0:
@@ -171,12 +186,13 @@ class Matterport(Dataset):
         ################ Feature Fusion ###################
         vis_id = torch.zeros((n_points_cur, num_img), dtype=int, device=self.device)
         cls_names = set()
+        # k = min(len(img_dirs), 2)
+        # img_dirs = img_dirs[0:k]
         for img_id, img_dir in enumerate(tqdm(img_dirs)):
             # load pose
             pose = poses[img_id]
             # load per-image intrinsic
             intr = intrinsics[img_id]
-
             # load depth and convert to meter
             depth_dir = img_dir.replace('color', 'depth')
             _, img_type, yaw_id = img_dir.split('/')[-1].split('_')
@@ -190,8 +206,7 @@ class Matterport(Dataset):
             image = Image.open(img_dir).convert("RGB")
             if self.img_size[0] != image.size[0] or self.img_size[1] != image.size[1]:
                 image = image.resize(self.img_size)
-
-            imgi_feature = self.vis_encoder(image, flag=False).clone().to(self.device, dtype=torch.float32)
+            imgi_feature = self.vis_encoder(image, flag=True).clone().to(self.device, dtype=torch.float16)
             new_names = self.vis_encoder.get_image_level_names(image)
 
             cls_names.update(new_names)
@@ -215,34 +230,74 @@ class Matterport(Dataset):
 
         counter[counter == 0] = 1e-5
         feat_bank = sum_features / counter
-        point_ids = torch.unique(vis_id.nonzero(as_tuple=False)[:, 0])
+        point_ids = torch.unique(vis_id.nonzero(as_tuple=False)[:, 0]).tolist()
+        raw_points = torch.tensor(raw_points, dtype=torch.float16).to(self.device)
         points = raw_points[point_ids]
         normals = normal_estimation(points, knn=33)
         # colors = raw_colors[point_ids]
         # label_set = set(raw_labels.tolist())
-        gt_label = raw_labels[point_ids]
-        # num_gt = len(set(gt_label.tolist()))
-        # num_pred = len(cls_names)
-        # gt_set = set(gt_label.tolist())
-        # print([ids2cat[d] for d in gt_set], cls_names)
-        llava_emd = self.vis_encoder.text_embedding(list(cls_names))
+        points = raw_points[point_ids]
+        gt_labels = raw_labels[point_ids]
+        cls_names = list(remove_repeat_words(cls_names))
+        llava_emd = self.vis_encoder.text_embedding(list(cls_names)).to(self.device, dtype=torch.float16)
         cls_names = list(cls_names)
-        return points, feat_bank[point_ids], normals, cls_names, self.lb_emd[gt_label], llava_emd, gt_label
+        feats = feat_bank[point_ids].detach()
+        normals, gt_labels = torch.tensor(normals), torch.tensor(gt_labels)
+
+        if self.is_orig:
+            return points, feats, normals, cls_names, raw_points, llava_emd, gt_labels.to(self.device)
+        pcd_gt_feats = self.lb_emd[gt_labels].to(self.device, dtype=torch.float16)
+        return points, feats, normals, cls_names, pcd_gt_feats, llava_emd, gt_labels.to(self.device)
+
+    def __len__(self):
+        return len(self.data_paths)
 
 
-def get_args():
-    '''Command line arguments.'''
+if __name__ == '__main__':
+    from torch.utils.data import DataLoader
+    from libs.vis_utils import creat_labeled_point_cloud, get_colored_point_cloud_pca_sep, draw_superpoints
 
-    parser = argparse.ArgumentParser(
-        description='Multi-view feature fusion of OpenSeg on Matterport3D.')
-    parser.add_argument('--data_dir', type=str, help='Where is the base logging directory')
-    parser.add_argument('--output_dir', type=str, help='Where is the base logging directory')
-    parser.add_argument('--split', type=str, default='test', help='split: "train"| "val" | "test" ')
-    parser.add_argument('--openseg_model', type=str, default='', help='Where is the exported OpenSeg model')
-    parser.add_argument('--process_id_range', nargs='+', default=None, help='the id range to process')
-    parser.add_argument('--img_feat_dir', type=str, default='', help='the id range to process')
+    # data_root = '/data/disk1/data/Matterport'
+    data_root = '/storage2/TEV/datasets/Matterport'
+    test_data = Matterport(data_root, vis_name='textclip', split='test', img_size=(640, 512))
+    test_dataloader = DataLoader(test_data, batch_size=1, shuffle=True, collate_fn=custom_collate_fn)
 
-    # Hyper parameters
-    parser.add_argument('--hparams', default=[], nargs="+")
-    args = parser.parse_args()
-    return args
+    for i, data in enumerate(test_dataloader):
+        pcd, feat, normal, llava_cls_names, opcd, llavalb_emd, gt_labelid = data
+        # get_colored_point_cloud_pca_sep(pcd[0].detach().cpu().numpy(), gtlb_emd[0].detach().cpu().numpy(), 'result/gtpca')
+        # get_colored_point_cloud_from_labels(pcd[0].detach().cpu().numpy(), gamma[0].detach().cpu().numpy(), name='clus')
+        # draw_point_cloud(rpoints[0].cpu().numpy(), None, f'result/org{str(i)}')
+        pdlb_embed = llavalb_emd[0]
+        # gt_ids = torch.argmax(torch.einsum('md,nd->mn', gtpcd_emd[0],
+        #                                    llavalb_emd[0].to(gtpcd_emd[0])), dim=-1).flatten().tolist()
+        # creat_labeled_point_cloud(pcd[0].detach().cpu().numpy(), gt_ids, f'result/gt{str(i)}')
+        # score = torch.einsum('md,nd->mn', test_data.lb_emd, llavalb_emd[0])
+        ids2cat = list(MATTERPORT_LABELS_160)
+        ids2cat.append('otherfurniture')
+        # uni_ids = set(gt_labelid[0].tolist())
+        print(set(llava_cls_names[0]).intersection(set(ids2cat)))
+        get_colored_point_cloud_pca_sep(pcd[0].detach().cpu().numpy(), feat[0].detach().cpu().numpy(),
+                                        f'result/pca{str(i)}')
+        draw_superpoints(pcd[0].detach().cpu().numpy(), normal[0].detach().cpu().numpy(), f'result/spts{str(i)}')
+        pred_scores = 1 + torch.einsum('md,nd->mn', feat[0], pdlb_embed.to(feat[0]))
+        # d_pcd, pred_labels1 = max_vote(pcd[0].to(pred_scores), normal[0].to(pred_scores), pred_scores.to(pred_scores))
+        pred_labels = torch.argmax(pred_scores, dim=-1)
+        creat_labeled_point_cloud(pcd[0].detach().cpu().numpy(), pred_labels.flatten().tolist(), f'result/pred{str(i)}')
+        # Save using pickle
+        print('The {}th point cloud has been processed'.format(i))
+        with open(f'result/pcd_{i}.pickle', 'wb') as f:
+            pickle.dump({'pcd': pcd[0], 'pred_names': [llava_cls_names[0][ids] for ids in pred_labels],
+                         # 'spts': [llava_cls_names[0][ids] for ids in pred_labels],
+                         'gt_names': [ids2cat[ids] for ids in gt_labelid[0].tolist()]}, f)
+        # # print(update_names, ids2cat)
+        # print(i, data[0].shape)
+        #     # gamma = fusion_wkeans([pcd.float(), normal.float()],
+        #     #                       [None, 1], n_clus=20, iters=10, is_prob=False, idx=0)[0]
+        #     print(pcd.shape, feat.shape, txt_emd.shape)
+        #     # label_np = list(set(labels[0].to(torch.int32).tolist()))
+        #     # label_np = set(labels[0].to(torch.int32).tolist())
+        #     # color = colors[0].detach().cpu().numpy()
+        # draw_point_cloud(org_pcd[0].detach().cpu().numpy(), None, 'orig')
+        # draw_point_cloud(superpoints[0].detach().cpu().numpy(), None, 'spts')
+        if i > 5:
+            break

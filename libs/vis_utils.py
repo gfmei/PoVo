@@ -1,9 +1,16 @@
+import os
+import sys
+
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import open3d as o3d
-
+sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append('../libs')
+sys.path.append('../datasets')
+sys.path.append('../models')
 
 SCANNET_COLOR_MAP_20 = {-1: (0., 0., 0.), 0: (174., 199., 232.), 1: (152., 223., 138.), 2: (31., 119., 180.),
                         3: (255., 187., 120.), 4: (188., 189., 34.), 5: (140., 86., 75.),
@@ -62,36 +69,63 @@ def feature_cluster_visualization(feature_map, n_clusters=6, w=18, h=24):
 
 
 def creat_labeled_point_cloud(points, labels, name):
-    # Create a point cloud object from the points
+    from datasets.meta_data.scannet200_constants import SCANNET_COLOR_MAP_200
+    from libs.o3d_util import generate_mesh_from_pcd, get_super_point_cloud
+    """
+    Creates a point cloud where each point is colored based on its label, and saves it to a .ply file.
+
+    Parameters:
+    - points: NumPy array of shape (N, 3) representing the point cloud.
+    - labels: NumPy array of shape (N,) containing integer labels for each point.
+    - name: String representing the base filename for the output .ply file.
+    """
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)
 
-    # Map the integer labels to colors using a colormap
-    # Normalize the labels to be in the range [0, 1] for the colormap
-    # normalized_labels = labels / max(labels.max(), 1)  # Avoid division by zero
-    # colors = plt.get_cmap("viridis")(normalized_labels)
-    # Generate a colormap with 21 distinct colors
-    cmap = plt.get_cmap('tab20c', len(np.unique(labels)))  # 'tab20b' has 20 distinct colors, adjust as needed for 21
-    # Map hard labels to colors using the colormap
-    colors = np.array([cmap(i)[:3] for i in labels])  # Extract RGB components
-    # colors = plt.get_cmap("tab20")(normalized_labels)
-    # Open3D expects colors in RGB format, in the range [0, 1]
-    pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])  # Exclude alpha channel
-    o3d.io.write_point_cloud(name + f'.ply', pcd)
+    # Map labels to colors using the predefined color map
+    # Normalize RGB values to [0, 1] range as expected by Open3D
+    colors = np.array([SCANNET_COLOR_MAP_200.get(label, (0., 0., 0.)) for label in labels]) / 255.0
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+
+    # Save the colored point cloud to a .ply file
+    o3d.io.write_point_cloud(f'{name}.ply', pcd)
 
 
-def get_super_point_cloud(mesh_file, xyz):
-    mesh = trimesh.load_mesh(mesh_file)
-    _vertices = torch.from_numpy(mesh.vertices.astype(np.float32))
-    _faces = torch.from_numpy(mesh.faces.astype(np.int64))
-    superpoint = segmentator.segment_mesh(_vertices, _faces).numpy()
-    # creat_labeled_point_cloud(xyz, superpoint, 'label_spts')
-    spnum = len(np.unique(superpoint))
-    superpoint_center = np.zeros((spnum, 3), dtype='float32')
-    for spID in np.unique(superpoint):
-        spMask = np.where(superpoint == spID)[0]
-        superpoint_center[spID] = xyz[spMask].mean(0)
-    return superpoint_center
+def create_labeled_point_cloud(points, labels, name):
+    """
+    Creates a point cloud where each point is colored based on its label, and saves it to a .ply file.
+
+    Parameters:
+    - points: NumPy array of shape (N, 3) representing the point cloud.
+    - labels: NumPy array of shape (N,) containing integer labels for each point.
+    - name: String representing the base filename for the output .ply file.
+    """
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+
+    # Map labels to colors using the predefined color map
+    # Normalize RGB values to [0, 1] range as expected by Open3D
+    colors = np.array([SCANNET_COLOR_MAP_200.get(label, (0., 0., 0.)) for label in labels]) / 255.0
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+
+    # Save the colored point cloud to a .ply file
+    o3d.io.write_point_cloud(f'{name}.ply', pcd)
+
+
+# def get_super_point_cloud(mesh_file, xyz):
+#     import segmentator
+#     mesh = trimesh.load_mesh(mesh_file)
+#     _vertices = torch.from_numpy(mesh.vertices.astype(np.float32))
+#     _faces = torch.from_numpy(mesh.faces.astype(np.int64))
+#     superpoint = segmentator.segment_mesh(_vertices, _faces).numpy()
+#     # creat_labeled_point_cloud(xyz, superpoint, 'label_spts')
+#     spnum = len(np.unique(superpoint))
+#     superpoint_center = np.zeros((spnum, 3), dtype='float32')
+#     for spID in np.unique(superpoint):
+#         spMask = np.where(superpoint == spID)[0]
+#         superpoint_center[spID] = xyz[spMask].mean(0)
+#     return superpoint_center
+
 
 
 def get_colored_point_cloud_pca_sep(xyz, feature, name):
@@ -144,3 +178,9 @@ def get_labeled_point_cloud_from_features(xyz, features, k=6, name='pca'):
     pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])  # Open3D expects RGB colors
     # Save the point cloud
     o3d.io.write_point_cloud(name + f'.ply', pcd)
+
+
+def draw_superpoints(xyz, normal, name):
+    mesh = generate_mesh_from_pcd(xyz, normal)
+    d_points, sptids = get_super_point_cloud(mesh)
+    creat_labeled_point_cloud(d_points, sptids, name)

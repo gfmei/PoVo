@@ -9,6 +9,40 @@ from PIL import Image
 from PIL.Image import Resampling
 from skimage import img_as_ubyte
 from skimage.segmentation import slic
+from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
+from torch import nn
+
+
+class SamMaskGenerator(nn.Module):
+    def __init__(self, image_size, model_type="vit_b", checkpoint_path=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        sam = sam_model_registry[model_type](checkpoint=checkpoint_path)
+        sam.to(device=self.device)
+        self.mask_generator = SamAutomaticMaskGenerator(sam)
+        self.image_size = image_size
+
+    @staticmethod
+    def generate_boxed_images(pil_img, sam_rest, flag=False):
+        bounding_boxes = []
+        image_list = list()
+        for rest in sam_rest:
+            x, y, w, h = rest['bbox']
+            mask = rest['segmentation']
+            bounding_boxes.append(mask)
+            img_copy = copy.deepcopy(pil_img)
+            draw = ImageDraw.Draw(img_copy)
+            draw.rectangle([x, y, x + w, y + h], outline="red", width=3)
+            image_list.append(img_copy)
+            if flag:
+                img_copy.show()
+        return image_list, bounding_boxes
+
+    def forward(self, pil_img, flag=False):
+        color_image = np.array(pil_img)
+        color_image = cv2.resize(color_image, self.image_size)
+        result = self.mask_generator.generate(color_image)
+        return self.generate_boxed_images(pil_img, result, flag)
 
 
 def save_boxe_img(img, bbox, name):
@@ -61,7 +95,7 @@ def get_boxed_images(image_pil, n_segments=16, flag=False):
     unique_segments = np.unique(segments_slic)
     bounding_boxes = []
     image_list = list()
-    for _, seg_val in enumerate(unique_segments):
+    for i , seg_val in enumerate(unique_segments):
         mask = segments_slic == seg_val
         rows = np.any(mask, axis=1)
         cols = np.any(mask, axis=0)
@@ -72,9 +106,8 @@ def get_boxed_images(image_pil, n_segments=16, flag=False):
         draw = ImageDraw.Draw(img_copy)
         draw.rectangle([xmin, ymin, xmax, ymax], outline="red", width=3)
         image_list.append(img_copy)
-
-        if flag:
-            img_copy.show()
+        # if flag:
+        #     img_copy.save(f'scan_result/pcd0_image{i}.png')
 
     return image_list, bounding_boxes
 
@@ -153,7 +186,6 @@ def draw_k2_boxes_with_gaps_pil(image, k=2, gap=2):
         colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]  # Blue, Green, Red, Cyan
     else:
         colors = [(np.random.randint(255), np.random.randint(255), np.random.randint(255)) for _ in range(k ** 2)]
-
     # Draw the boxes with gaps
     for row in range(k):
         for col in range(k):
@@ -177,3 +209,7 @@ def get_masks_from_pil(image, n_seg=250):
         superpixel_images.append(Image.fromarray(masked_image))
 
     return segments, superpixel_images
+
+
+
+

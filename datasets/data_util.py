@@ -41,3 +41,18 @@ def label_revise(gt_cls, pred_cls, score, threshold=0.6):
     # Replace elements in X based on the threshold
     X_updated = [Y[index[i].item()] if val_list[i] > threshold else X[i] for i in range(len(X))]
     return X_updated
+
+
+def custom_collate_fn(batch):
+    """
+    Custom collate function to handle batching of different data types.
+    """
+    points, features, raw_normals, cls_names, pcd_gt_emd, pred_lb_emd, gt_label = zip(*batch)
+    points = torch.stack(points)
+    features = torch.stack(features)
+    raw_normals = torch.stack(raw_normals)
+    pcd_gt_emd = torch.stack(pcd_gt_emd)
+    pred_lb_emd = torch.stack(pred_lb_emd)
+    gt_label = torch.stack(gt_label)
+    # cls_names remains a tuple of strings, no need to modify
+    return points, features, raw_normals, cls_names, pcd_gt_emd, pred_lb_emd, gt_label

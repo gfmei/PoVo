@@ -15,6 +15,27 @@ from llava.model.llava_arch import unpad_image
 from llava.utils import disable_torch_init
 from libs.lib_mask import get_boxed_images
 
+import spacy
+
+# Load the spaCy model
+nlp = spacy.load("en_core_web_sm")
+
+
+def extract_entities(sentence):
+    # Phrase to remove
+    phrase_to_remove = "the red bounding box in the image contains"
+
+    # Remove the phrase from the sentence
+    modified_sentence = sentence.replace(phrase_to_remove, "").strip()
+
+    # Perform entity extraction on the modified sentence
+    doc = nlp(modified_sentence)
+
+    # Extract entities and return them as a list
+    entities = [entity.text for entity in doc.ents]
+
+    return entities
+
 
 def produce_conv(model, qs, conv_mode):
     image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
@@ -31,6 +52,7 @@ def produce_conv(model, qs, conv_mode):
     conv = conv_templates[conv_mode].copy()
     conv.append_message(conv.roles[0], qs)
     conv.append_message(conv.roles[1], None)
+    return conv
 
 
 def load_llava_model(model_path="liuhaotian/llava-v1.6-mistral-7b"):
@@ -61,8 +83,8 @@ def get_image_category_from_llava(images, tokenizer, model, image_processor, pro
     # Model
     if image_size is None:
         image_size = [320, 240]
-    image_sizes = [x.size for x in images]  # a list of image size as [w, h]
     images = [x.resize(image_size) for x in images]
+    image_sizes = [x.size for x in images]  # a list of image size as [w, h]
     images_tensor = process_images(
         images,
         image_processor,
@@ -91,10 +113,27 @@ def get_image_category_from_llava(images, tokenizer, model, image_processor, pro
     outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
     labels = []
     for output in outputs:
+        if 'no objects' in output or 'too blurr' in output:
+            labels.append(['wall'])
+            continue
+        if 'red bounding box' in output:
+            new_names = extract_entities(output)
+            if len(new_names) == 0:
+                labels.append('floor')
+            else:
+                labels.extend(new_names)
+            continue
         # Split the output into individual labels, convert each to lowercase and strip whitespace
         new_labels = [label.strip().lower().replace('.', '') for label in output.strip().split(',')]
         # Update the labels set with these new labels
-        labels.append(new_labels)
+        if '' in new_labels:
+            new_labels.remove('')
+        new_labels = [item for item in new_labels if
+                      not (item.isalpha() and len(item) == 1) and not (item.isdigit() and len(item) == 1)]
+        if new_labels is not None:
+            labels.append(new_labels)
+        else:
+            labels.append('floor')
         # Now 'labels' contains all unique, cleaned labels from 'outputs'
     return labels
 
@@ -104,11 +143,6 @@ def generate_category_from_llava(image_files, tokenizer, model, image_processor,
     if image_size is None:
         image_size = [320, 240]
     # disable_torch_init()
-
-    # model_name = get_model_name_from_path(model_path)
-    # tokenizer, model, image_processor, context_len = load_pretrained_model(
-    #     model_path, None, model_name
-    # )
     images = load_images(image_files, image_size)  # a list of images with shape [h, w, 3]
     # images, label_list = load_image_with_box(image_files[0], image_size, k=k)
     # print([label.sum() for label in label_list], len(label_list))
@@ -142,10 +176,16 @@ def generate_category_from_llava(image_files, tokenizer, model, image_processor,
     outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
     labels = set()
     for output in outputs:
+        if 'no objects' in output or 'red box' in output:
+            labels.update(['wall'])
+            continue
         # Split the output into individual labels, convert each to lowercase and strip whitespace
         new_labels = [label.strip().lower().replace('.', '') for label in output.strip().split(',')]
         # Update the labels set with these new labels
-        labels.update(new_labels)
+        if '' in new_labels:
+            new_labels.remove('')
+        if new_labels is not None:
+            labels.update(new_labels)
         # Now 'labels' contains all unique, cleaned labels from 'outputs'
     return labels
 

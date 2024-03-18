@@ -1,5 +1,20 @@
+import nltk
 import numpy as np
 import torch
+from nltk.stem import WordNetLemmatizer
+
+# Ensure you have the necessary NLTK data
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+# Initialize the WordNet lemmatizer
+lemmatizer = WordNetLemmatizer()
+
+
+def remove_repeat_words(text):
+    # Convert words to their singular form using lemmatization
+    singular_words = set(lemmatizer.lemmatize(word) for word in text)
+
+    return singular_words
 
 
 def angle_difference(src_feats, dst_feats):
@@ -250,6 +265,3 @@ def sinkhorn(cost, p=None, q=None, epsilon=1e-4, thresh=1e-2, max_iter=100):
     gamma = torch.exp(K)
     # Sinkhorn distance
     return gamma, K
-
-
-

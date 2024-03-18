@@ -15,7 +15,7 @@ saliency: True
 model_name: dense_clip
 img_size: [320, 240]
 patch_sizes: [256, 128, 64]
-n_segments: 28
+n_segments: 64
 patch_w1: 1.0
 patch_w2: 1.0
 patch_w3: 1.0

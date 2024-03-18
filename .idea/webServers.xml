@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="2d41c080-6a96-4bf0-aa42-ba16fdcc964e" name="diclubclsin">
+        <fileTransfer rootFolder="/storage3/TEV/gmei/code" accessType="SFTP" host="diclubclsin" port="22" sshConfigId="f4049653-20f1-4207-91be-61ee1047442c" sshConfig="gmei@diclubclsin:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
