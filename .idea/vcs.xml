@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/tools/DRMerging" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/tools/lseg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/tools/sam2tools" vcs="Git" />
   </component>
 </project>

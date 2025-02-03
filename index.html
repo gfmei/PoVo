@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="description" content="Vocabulary-Free 3D Instance Segmentation with Vision and Language Assistant">
+    <meta name="keywords" content="Vocabulary-Free, 3D Vision and Language Assistant">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PoVo</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="./static/css/bulma.min.css">
+    <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+    <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="./static/css/index.css">
+
+    <!-- MathJax -->
+    <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-body">
+            <div class="container is-max-desktop">
+                <div class="columns is-centered">
+                    <div class="column has-text-centered">
+                        <!-- Title -->
+                        <h1 class="title is-1 publication-title">
+                            Vocabulary-Free 3D Instance Segmentation with Vision and Language Assistant
+                        </h1>
+
+                        <!-- Authors -->
+                        <div class="is-size-5 publication-authors">
+                            <span class="author-block">
+                                <a href="https://scholar.google.com/citations?user=VsmIGqsAAAAJ" target="_blank">Guofeng Mei</a>,
+                            </span>
+                            <span class="author-block">
+                                <a href="https://scholar.google.com/citations?user=djO2pVUAAAAJ" target="_blank">Luigi Riz</a>,
+                            </span>
+                            <span class="author-block">
+                                <a href="https://scholar.google.com/citations?user=KBZ3zrEAAAAJ" target="_blank">Yiming Wang</a>,
+                            </span>
+                            <span class="author-block">
+                                <a href="https://scholar.google.com/citations?user=BQ7li6AAAAAJ" target="_blank">Fabio Poiesi</a>
+                            </span>
+                        </div>
+
+                        <!-- Affiliations -->
+                        <div class="is-size-5 publication-authors">
+                            <span class="author-block">Fondazione Bruno Kessler, Italy</span>
+                        </div>
+
+                        <!-- Links -->
+                        <div class="publication-links">
+                            <a class="external-link button is-normal is-rounded is-dark" href="https://www.arxiv.org/pdf/2408.10652" target="_blank">
+                                <span class="icon" style="color: white;">
+                                    <i class="ai ai-arxiv"></i>
+                                </span>
+                                <span>arXiv</span>
+                            </a>
+                            <a class="external-link button is-normal is-rounded" href="https://github.com/gfmei/PoVo" style="background-color: lightgray; color: black; padding: 10px; display: inline-flex; align-items: center;" target="_blank">
+                                <span class="icon" style="color: black;">
+                                    <i class="fab fa-github"></i>
+                                </span>
+                                <span>Code (coming soon)</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Teaser Section -->
+    <section class="hero teaser">
+        <div class="container is-max-desktop">
+            <div class="hero-body" style="display: flex; flex-direction: column;">
+                <img src="./static/images/teaser.png" alt="PoVo" style="max-height: 400px; align-self: center;" />
+                <h2 class="subtitle has-text-centered" style="margin-top: 20px;">
+                    We introduce a vocabulary-free approach to address 3D instance segmentation that leverages language and vision assistants, moving beyond the limitations of open-vocabulary approaches.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <!-- Abstract Section -->
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Abstract</h2>
+                    <div class="content has-text-justified">
+                        <p>Most recent 3D instance segmentation methods are open vocabulary, offering greater flexibility than closed-vocabulary methods. Yet, they are limited to reasoning within a specific set of concepts, i.e., the vocabulary, prompted by the user at test time. In essence, these models cannot reason in an open-ended fashion, i.e., answering "List the objects in the scene."</p>
+                        <p><b>We introduce the first method to address 3D instance segmentation in a setting that is void of any vocabulary prior, namely a vocabulary-free setting. We leverage a large vision-language assistant and an open-vocabulary 2D instance segmenter to discover and ground semantic categories on the posed images.</b></p>
+                        <p>We evaluate our method using ScanNet200 and Replica, outperforming existing methods in both vocabulary-free and open-vocabulary settings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Method Section -->
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-full-width">
+                    <h2 class="title is-3">Method</h2>
+                    <img src="./static/images/block.png" alt="Architecture of PoVo" />
+                    <div class="content has-text-justified" style="margin-top: 2rem;">
+                        <p>Given the point cloud \(\mathcal{P}\) of a 3D scene and the corresponding set of \(N\) posed images \(\mathcal{V} = \{I_n\}_{n=1}^N\),
+                            our method predicts 3D instance masks with their associated semantic labels without knowing a predefined vocabulary. Our method first utilizes a large vision-language assistant and an open-vocabulary 2D instance segmentation model to identify and ground objects on each posed image \(I_n\),
+                            forming the scene vocabulary \(\mathcal{C}\) while mitigating the risk of hallucination by the vision-language assistant.</p>
+                        <p>Meanwhile, we partition the 3D scene \(\mathcal{P}\) into geometrically-coherent superpoints \(\mathcal{Q}\), to serve as initial seeds for 3D instance proposals.
+                            Then, with the semantic-aware instance masks from multi-view images, we propose a novel procedure in representing superpoints and guiding their merging into 3D instance masks,
+                            using both the grounded semantic labels and their instance masks.</p>
+                        <p>By projecting each 3D superpoint onto image planes and checking its overlapping with 2D instance masks, we aggregate semantic labels from multiple views within each superpoint.
+                            Once each superpoint is associated with a semantic label, we perform superpoint merging to form 3D instance masks via spectral clustering. This involves defining an affinity matrix among superpoints constructed by both mask coherence scores computed with the 2D instance masks and semantic coherence scores computed with the per-superpoint textual embeddings.</p>
+                        <p>Finally, for each 3D instance proposal, we obtain the text-aligned representation by aggregating the CLIP visual representation of multi-scale object crops from multi-view images.
+                            We further enrich this vision-based representation with textual representation derived from the merged superpoints.
+                            This text-aligned mask representation enables the semantic assignment to instance masks with the scene vocabulary \(\mathcal{C}\).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="content has-text-centered">
+                <a class="icon-link" href="https://www.arxiv.org/pdf/2408.10652" target="_blank" title="View Paper on arXiv">
+                    <i class="fas fa-file-pdf fa-2x"></i>
+                </a>
+                <a class="icon-link" href="https://github.com/gfmei/PoVo" target="_blank" title="View Project on GitHub">
+                    <i class="fab fa-github fa-2x"></i>
+                </a>
+            </div>
+            <div class="columns is-centered" style="margin-top: 20px;">
+                <div class="column is-8">
+                    <div class="content has-text-centered">
+                        <p>This website is licensed under a <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="license" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>.</p>
+                        <p>Template adapted from <a href="https://github.com/nerfies/nerfies.github.io" target="_blank">Nerfies</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
