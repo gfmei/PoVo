@@ -31,7 +31,7 @@ For questions, issues, or collaboration opportunities:
 ## Quick Links
 - [PoVo Website](https://gfmei.github.io/PoVo/)
 - [PoVo Code Repository](https://github.com/gfmei/PoVo)
-- [PoVo Paper on arXiv](https://arxiv.org/abs/2411.19774)
+- [PoVo Paper on arXiv](https://www.arxiv.org/pdf/2408.10652)
 
 
 ## Website License
