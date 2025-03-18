@@ -3,10 +3,7 @@
 Welcome to the official repository for **Vocabulary-Free 3D Instance Segmentation with Vision and Language Assistant**! This repository hosts the source code, documentation, and resources for the [PoVo project](https://gfmei.github.io/PoVo/).
 
 ## About PoVo
-**PoVo** is a cutting-edge framework designed to integrate **3D perception** with **natural language understanding**, enabling advanced scene comprehension and interaction capabilities. By leveraging innovative algorithms and models, PoVo bridges the gap between 3D spatial data and language processing to provide state-of-the-art performance in tasks such as:
-- 3D question answering
-- Dense captioning
-- Semantic understanding
+**PoVo** is a 3D Instance Segmentation method that can identify all object instances in a point cloud while associating them with semantic labels, without relying on any predefined vocabulary.
 
 Visit the [PoVo website](https://gfmei.github.io/PoVo) to explore more details about the project, methodology, and results.
 
