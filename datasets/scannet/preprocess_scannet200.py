@@ -11,17 +11,13 @@ import pandas as pd
 import torch
 from plyfile import PlyData, PlyElement
 
-from datasets.meta_data.scannet200_constants import VALID_CLASS_IDS_200
-
 current_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
-# libs_dir = os.path.abspath(os.path.join(parent_dir, 'libs'))
-data_dir = os.path.abspath(os.path.join(parent_dir, 'common'))
 # Add directories to sys.path
 sys.path.append(current_dir)
 sys.path.append(parent_dir)
 
-# from common.scannet200_constants import VALID_CLASS_IDS_200
+from datasets.meta_data.scannet200_constants import VALID_CLASS_IDS_200
 
 
 def face_normal(vertex, face):
