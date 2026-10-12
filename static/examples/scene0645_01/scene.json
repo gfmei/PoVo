@@ -1,0 +1,623 @@
+{
+  "scene": "scene0645_01",
+  "point_count": 330321,
+  "displayed_points": 30000,
+  "stride": 22,
+  "center": [
+    4.834936141967773,
+    4.042234897613525,
+    1.3857901096343994
+  ],
+  "scale_meters": 4.612578392028809,
+  "class_names": [
+    "chair",
+    "table",
+    "door",
+    "couch",
+    "cabinet",
+    "shelf",
+    "desk",
+    "office chair",
+    "bed",
+    "pillow",
+    "sink",
+    "picture",
+    "window",
+    "toilet",
+    "bookshelf",
+    "monitor",
+    "curtain",
+    "book",
+    "armchair",
+    "coffee table",
+    "box",
+    "refrigerator",
+    "lamp",
+    "kitchen cabinet",
+    "towel",
+    "clothes",
+    "tv",
+    "nightstand",
+    "counter",
+    "dresser",
+    "stool",
+    "cushion",
+    "plant",
+    "ceiling",
+    "bathtub",
+    "end table",
+    "dining table",
+    "keyboard",
+    "bag",
+    "backpack",
+    "toilet paper",
+    "printer",
+    "tv stand",
+    "whiteboard",
+    "blanket",
+    "shower curtain",
+    "trash can",
+    "closet",
+    "stairs",
+    "microwave",
+    "stove",
+    "shoe",
+    "computer tower",
+    "bottle",
+    "bin",
+    "ottoman",
+    "bench",
+    "board",
+    "washing machine",
+    "mirror",
+    "copier",
+    "basket",
+    "sofa chair",
+    "file cabinet",
+    "fan",
+    "laptop",
+    "shower",
+    "paper",
+    "person",
+    "paper towel dispenser",
+    "oven",
+    "blinds",
+    "rack",
+    "plate",
+    "blackboard",
+    "piano",
+    "suitcase",
+    "rail",
+    "radiator",
+    "recycling bin",
+    "container",
+    "wardrobe",
+    "soap dispenser",
+    "telephone",
+    "bucket",
+    "clock",
+    "stand",
+    "light",
+    "laundry basket",
+    "pipe",
+    "clothes dryer",
+    "guitar",
+    "toilet paper holder",
+    "seat",
+    "speaker",
+    "column",
+    "bicycle",
+    "ladder",
+    "bathroom stall",
+    "shower wall",
+    "cup",
+    "jacket",
+    "storage bin",
+    "coffee maker",
+    "dishwasher",
+    "paper towel roll",
+    "machine",
+    "mat",
+    "windowsill",
+    "bar",
+    "toaster",
+    "bulletin board",
+    "ironing board",
+    "fireplace",
+    "soap dish",
+    "kitchen counter",
+    "doorframe",
+    "toilet paper dispenser",
+    "mini fridge",
+    "fire extinguisher",
+    "ball",
+    "hat",
+    "shower curtain rod",
+    "water cooler",
+    "paper cutter",
+    "tray",
+    "shower door",
+    "pillar",
+    "ledge",
+    "toaster oven",
+    "mouse",
+    "toilet seat cover dispenser",
+    "furniture",
+    "cart",
+    "storage container",
+    "scale",
+    "tissue box",
+    "light switch",
+    "crate",
+    "power outlet",
+    "decoration",
+    "sign",
+    "projector",
+    "closet door",
+    "vacuum cleaner",
+    "candle",
+    "plunger",
+    "stuffed animal",
+    "headphones",
+    "dish rack",
+    "broom",
+    "guitar case",
+    "range hood",
+    "dustpan",
+    "hair dryer",
+    "water bottle",
+    "handicap bar",
+    "purse",
+    "vent",
+    "shower floor",
+    "water pitcher",
+    "mailbox",
+    "bowl",
+    "paper bag",
+    "alarm clock",
+    "music stand",
+    "projector screen",
+    "divider",
+    "laundry detergent",
+    "bathroom counter",
+    "object",
+    "bathroom vanity",
+    "closet wall",
+    "laundry hamper",
+    "bathroom stall door",
+    "ceiling light",
+    "trash bin",
+    "dumbbell",
+    "stair rail",
+    "tube",
+    "bathroom cabinet",
+    "cd case",
+    "closet rod",
+    "coffee kettle",
+    "structure",
+    "shower head",
+    "keyboard piano",
+    "case of water bottles",
+    "coat rack",
+    "storage organizer",
+    "folded chair",
+    "fire alarm",
+    "power strip",
+    "calendar",
+    "poster",
+    "potted plant",
+    "luggage",
+    "mattress"
+  ],
+  "prediction": [
+    {
+      "label": "curtain",
+      "class_id": 16,
+      "confidence": 0.554575502872467
+    },
+    {
+      "label": "bed",
+      "class_id": 8,
+      "confidence": 0.20454294979572296
+    },
+    {
+      "label": "pillow",
+      "class_id": 9,
+      "confidence": 0.3025335967540741
+    },
+    {
+      "label": "pillow",
+      "class_id": 9,
+      "confidence": 0.4054275453090668
+    },
+    {
+      "label": "cushion",
+      "class_id": 31,
+      "confidence": 0.04648232087492943
+    },
+    {
+      "label": "picture",
+      "class_id": 11,
+      "confidence": 0.08925402164459229
+    },
+    {
+      "label": "bed",
+      "class_id": 8,
+      "confidence": 0.4826606214046478
+    },
+    {
+      "label": "bed",
+      "class_id": 8,
+      "confidence": 0.031092245131731033
+    },
+    {
+      "label": "ottoman",
+      "class_id": 55,
+      "confidence": 0.1584746092557907
+    },
+    {
+      "label": "armchair",
+      "class_id": 18,
+      "confidence": 0.49584969878196716
+    },
+    {
+      "label": "armchair",
+      "class_id": 18,
+      "confidence": 0.1158016100525856
+    },
+    {
+      "label": "doorframe",
+      "class_id": 116,
+      "confidence": 0.08167874813079834
+    },
+    {
+      "label": "shower curtain rod",
+      "class_id": 122,
+      "confidence": 0.0613069087266922
+    },
+    {
+      "label": "object",
+      "class_id": 170,
+      "confidence": 0.047100719064474106
+    },
+    {
+      "label": "curtain",
+      "class_id": 16,
+      "confidence": 0.030889974907040596
+    },
+    {
+      "label": "radiator",
+      "class_id": 78,
+      "confidence": 0.03635341301560402
+    },
+    {
+      "label": "lamp",
+      "class_id": 22,
+      "confidence": 0.5277570486068726
+    },
+    {
+      "label": "bed",
+      "class_id": 8,
+      "confidence": 0.6603089570999146
+    },
+    {
+      "label": "mouse",
+      "class_id": 130,
+      "confidence": 0.025363987311720848
+    },
+    {
+      "label": "armchair",
+      "class_id": 18,
+      "confidence": 0.349793940782547
+    },
+    {
+      "label": "end table",
+      "class_id": 35,
+      "confidence": 0.3418131470680237
+    },
+    {
+      "label": "doorframe",
+      "class_id": 116,
+      "confidence": 0.02609415166079998
+    },
+    {
+      "label": "doorframe",
+      "class_id": 116,
+      "confidence": 0.025914037600159645
+    },
+    {
+      "label": "couch",
+      "class_id": 3,
+      "confidence": 0.28031355142593384
+    },
+    {
+      "label": "object",
+      "class_id": 170,
+      "confidence": 0.06806381046772003
+    },
+    {
+      "label": "pillow",
+      "class_id": 9,
+      "confidence": 0.20161032676696777
+    },
+    {
+      "label": "pillow",
+      "class_id": 9,
+      "confidence": 0.541077196598053
+    },
+    {
+      "label": "bed",
+      "class_id": 8,
+      "confidence": 0.8406389355659485
+    },
+    {
+      "label": "couch",
+      "class_id": 3,
+      "confidence": 0.7991336584091187
+    },
+    {
+      "label": "cushion",
+      "class_id": 31,
+      "confidence": 0.09340108931064606
+    },
+    {
+      "label": "bed",
+      "class_id": 8,
+      "confidence": 0.14926916360855103
+    },
+    {
+      "label": "luggage",
+      "class_id": 196,
+      "confidence": 0.2290429323911667
+    },
+    {
+      "label": "bucket",
+      "class_id": 84,
+      "confidence": 0.03756289184093475
+    },
+    {
+      "label": "doorframe",
+      "class_id": 116,
+      "confidence": 0.028927313163876534
+    },
+    {
+      "label": "picture",
+      "class_id": 11,
+      "confidence": 0.09256430715322495
+    },
+    {
+      "label": "shower wall",
+      "class_id": 99,
+      "confidence": 0.07674184441566467
+    },
+    {
+      "label": "shower curtain rod",
+      "class_id": 122,
+      "confidence": 0.08581310510635376
+    },
+    {
+      "label": "shower curtain",
+      "class_id": 45,
+      "confidence": 0.1629144251346588
+    },
+    {
+      "label": "bathtub",
+      "class_id": 34,
+      "confidence": 0.8103823065757751
+    },
+    {
+      "label": "door",
+      "class_id": 2,
+      "confidence": 0.057140469551086426
+    },
+    {
+      "label": "paper bag",
+      "class_id": 163,
+      "confidence": 0.027711283415555954
+    },
+    {
+      "label": "backpack",
+      "class_id": 39,
+      "confidence": 0.046174533665180206
+    },
+    {
+      "label": "shoe",
+      "class_id": 51,
+      "confidence": 0.25520721077919006
+    },
+    {
+      "label": "bag",
+      "class_id": 38,
+      "confidence": 0.05239047855138779
+    },
+    {
+      "label": "chair",
+      "class_id": 0,
+      "confidence": 0.26966893672943115
+    },
+    {
+      "label": "pillow",
+      "class_id": 9,
+      "confidence": 0.08659344166517258
+    },
+    {
+      "label": "soap dish",
+      "class_id": 114,
+      "confidence": 0.3123705983161926
+    },
+    {
+      "label": "toilet",
+      "class_id": 13,
+      "confidence": 0.8280614018440247
+    },
+    {
+      "label": "toilet",
+      "class_id": 13,
+      "confidence": 0.3676696717739105
+    },
+    {
+      "label": "toilet",
+      "class_id": 13,
+      "confidence": 0.46120578050613403
+    },
+    {
+      "label": "door",
+      "class_id": 2,
+      "confidence": 0.048642538487911224
+    },
+    {
+      "label": "toilet paper",
+      "class_id": 40,
+      "confidence": 0.45292654633522034
+    },
+    {
+      "label": "towel",
+      "class_id": 24,
+      "confidence": 0.7813600897789001
+    },
+    {
+      "label": "closet door",
+      "class_id": 143,
+      "confidence": 0.053947463631629944
+    },
+    {
+      "label": "suitcase",
+      "class_id": 76,
+      "confidence": 0.5286595225334167
+    },
+    {
+      "label": "backpack",
+      "class_id": 39,
+      "confidence": 0.78515625
+    },
+    {
+      "label": "suitcase",
+      "class_id": 76,
+      "confidence": 0.6192003488540649
+    },
+    {
+      "label": "doorframe",
+      "class_id": 116,
+      "confidence": 0.06283372640609741
+    },
+    {
+      "label": "pipe",
+      "class_id": 89,
+      "confidence": 0.022083137184381485
+    },
+    {
+      "label": "lamp",
+      "class_id": 22,
+      "confidence": 0.541353166103363
+    },
+    {
+      "label": "bookshelf",
+      "class_id": 14,
+      "confidence": 0.03612079471349716
+    },
+    {
+      "label": "lamp",
+      "class_id": 22,
+      "confidence": 0.32011619210243225
+    },
+    {
+      "label": "mirror",
+      "class_id": 59,
+      "confidence": 0.29887163639068604
+    },
+    {
+      "label": "telephone",
+      "class_id": 83,
+      "confidence": 0.3305134177207947
+    },
+    {
+      "label": "toilet",
+      "class_id": 13,
+      "confidence": 0.12777778506278992
+    },
+    {
+      "label": "bathroom counter",
+      "class_id": 169,
+      "confidence": 0.09900294244289398
+    },
+    {
+      "label": "box",
+      "class_id": 20,
+      "confidence": 0.042788248509168625
+    },
+    {
+      "label": "rail",
+      "class_id": 77,
+      "confidence": 0.03606778010725975
+    },
+    {
+      "label": "sink",
+      "class_id": 10,
+      "confidence": 0.06819424033164978
+    },
+    {
+      "label": "suitcase",
+      "class_id": 76,
+      "confidence": 0.3300715982913971
+    },
+    {
+      "label": "trash bin",
+      "class_id": 176,
+      "confidence": 0.03943583741784096
+    },
+    {
+      "label": "trash bin",
+      "class_id": 176,
+      "confidence": 0.11397843807935715
+    },
+    {
+      "label": "trash bin",
+      "class_id": 176,
+      "confidence": 0.04638533666729927
+    },
+    {
+      "label": "door",
+      "class_id": 2,
+      "confidence": 0.10207448899745941
+    },
+    {
+      "label": "shoe",
+      "class_id": 51,
+      "confidence": 0.1242968961596489
+    }
+  ],
+  "gt_instances": 62,
+  "points_sha256": "d84d386d87c097d536a431c22eb54b0007fa5e8dcb9a6afdca25ae75fbe72893",
+  "source_sha256": {
+    "cloud": "56d186ee0386f29f17f23593f929405416a98e361c7cb8f4a6e2e370b49e96df",
+    "prediction": "f7355e11f683aa2ca84dd9d538d03b57c7a84cf186647a314aa4d70b00694e74"
+  },
+  "sampling": "uniform without replacement; numpy default_rng seed 0; shared point indices",
+  "ground_truth": "foreground instances only; wall, floor, and ignored points shown in gray",
+  "localized_class_accuracy": {
+    "correct": 24,
+    "total": 27,
+    "accuracy": 0.8888888888888888,
+    "definition": "Correct class on predicted instances with ground-truth IoU >= 0.5; ground-truth regions have at least 100 points",
+    "point_count": 330321,
+    "ground_truth_use": "evaluation only"
+  },
+  "prediction_model": {
+    "model": "Qwen/Qwen3.5-9B",
+    "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
+  },
+  "prediction_frames": 50,
+  "prediction_recognition": {
+    "encoder": "ViT-L/14@336px",
+    "embedding_dim": 768,
+    "text_templates": [
+      "a {}",
+      "a photo of a {}",
+      "a photo of the {}",
+      "a close-up photo of a {}",
+      "a cropped photo of a {}",
+      "a {} in a room"
+    ],
+    "focus_weight": 0.5
+  }
+}

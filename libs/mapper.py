@@ -3,15 +3,6 @@ import torch
 # import torch_scatter
 
 
-def scaling_mapping(mapping, a, b, c, d):
-    # Scale mapping value from depth image to RGB image by interpolation
-    # Calculate scaling factors
-    scale_x = c / a
-    scale_y = d / b
-
-    mapping[:, 0] = mapping[:, 0] * scale_x
-    mapping[:, 1] = mapping[:, 1] * scale_y
-    return mapping
 
 
 class PointCloudToImageMapper(object):
@@ -26,8 +17,8 @@ class PointCloudToImageMapper(object):
         self.eps = eps
 
         self.device = device
-        if use_torch:
-            self.intrinsics = torch.from_numpy(self.intrinsics).to(device)
+        if use_torch and self.intrinsics is not None:
+            self.intrinsics = torch.as_tensor(self.intrinsics, device=device)
 
     def compute_mapping_torch(self, camera_to_world, coords, depth=None, intrinsic=None, vis_thresh=None):
         """
@@ -38,13 +29,12 @@ class PointCloudToImageMapper(object):
         :return: mapping, N x 3 format, (H,W,mask)
         """
         device = coords.device
-        if vis_thresh is not None:
-            self.vis_thres = vis_thresh
-        if intrinsic is not None:  # adjust intrinsic
-            self.intrinsics = intrinsic
-        else:
-            intrinsic = self.intrinsics
-        camera_to_world = torch.from_numpy(camera_to_world).to(device).float()
+        visibility_threshold = self.vis_thres if vis_thresh is None else vis_thresh
+        intrinsic = self.intrinsics if intrinsic is None else intrinsic
+        if intrinsic is None:
+            raise ValueError("Camera intrinsics are required for projection.")
+        intrinsic = torch.as_tensor(intrinsic, device=device)
+        camera_to_world = torch.as_tensor(camera_to_world, device=device).float()
 
         mapping = torch.zeros((3, coords.shape[0]), dtype=torch.long, device=device)
         coords_new = torch.cat([coords, torch.ones([coords.shape[0], 1], dtype=torch.float, device=device)], dim=1).T
@@ -54,7 +44,7 @@ class PointCloudToImageMapper(object):
         # Create a regularization term (epsilon * Identity matrix)
         try:
             world_to_camera = torch.linalg.pinv(camera_to_world)
-        except torch._C._LinAlgError as e:
+        except torch.linalg.LinAlgError as e:
             print(f"Direct inversion failed: {e}")
             print("Applying sign-aware regularization to the diagonal.")
 
@@ -67,26 +57,38 @@ class PointCloudToImageMapper(object):
             world_to_camera = torch.linalg.inv(camera_to_world_reg)
 
         p = world_to_camera.float() @ coords_new.float()
+        camera_depth = p[2].clone()
         p[2][torch.abs(p[2]) < self.eps] = self.eps
         p[0] = (p[0] * intrinsic[0][0]) / p[2] + intrinsic[0][2]
         p[1] = (p[1] * intrinsic[1][1]) / p[2] + intrinsic[1][2]
         pi = torch.round(p).long()  # simply round the projected coordinates
         inside_mask = (
-                (pi[0] >= self.cut_bound)
+                torch.isfinite(camera_depth)
+                * (camera_depth > self.eps)
+                * (pi[0] >= self.cut_bound)
                 * (pi[1] >= self.cut_bound)
                 * (pi[0] < self.image_dim[0] - self.cut_bound)
                 * (pi[1] < self.image_dim[1] - self.cut_bound)
         )
         if depth is not None:
-            depth = torch.from_numpy(depth).to(device)
+            depth = torch.as_tensor(depth, device=device)
             # print(inside_mask.shape, depth.shape, pi.shape, pi[1][inside_mask].max(), pi[0][inside_mask].max())
-            occlusion_mask = torch.abs(
-                depth[pi[1][inside_mask], pi[0][inside_mask]] - p[2][inside_mask]) <= self.vis_thres
+            depth_cur = depth[pi[1][inside_mask], pi[0][inside_mask]]
+            occlusion_mask = (depth_cur > 0) & (torch.abs(
+                depth_cur - camera_depth[inside_mask]) <= visibility_threshold)
             inside_mask[inside_mask == True] = occlusion_mask.clone()
         else:
             front_mask = p[2] > 0  # make sure the depth is in front
             inside_mask = front_mask * inside_mask
 
+        # Keep the nearest surface when several points project to the same pixel.
+        if inside_mask.any():
+            pixel_ids = pi[1][inside_mask] * self.image_dim[0] + pi[0][inside_mask]
+            _, inverse = torch.unique(pixel_ids, return_inverse=True)
+            visible_depth = camera_depth[inside_mask]
+            min_depth = torch.full((int(inverse.max()) + 1,), float('inf'), device=device)
+            min_depth.scatter_reduce_(0, inverse, visible_depth, reduce='amin', include_self=True)
+            inside_mask[inside_mask.clone()] = visible_depth - min_depth[inverse] <= 0.2
         new_inside_mask = inside_mask
 
         mapping[0][new_inside_mask] = pi[1][new_inside_mask]
@@ -103,10 +105,9 @@ class PointCloudToImageMapper(object):
         :param intrinsic: 3x3 format
         :return: mapping, N x 3 format, (H,W,mask)
         """
-        if intrinsic is not None:  # adjust intrinsic
-            self.intrinsics = intrinsic
-        else:
-            intrinsic = self.intrinsics
+        intrinsic = self.intrinsics if intrinsic is None else intrinsic
+        if intrinsic is None:
+            raise ValueError("Camera intrinsics are required for projection.")
 
         mapping = np.zeros((3, coords.shape[0]), dtype=int)
         coords_new = np.concatenate([coords, np.ones([coords.shape[0], 1])], axis=1).T
@@ -114,12 +115,15 @@ class PointCloudToImageMapper(object):
 
         world_to_camera = np.linalg.inv(camera_to_world)
         p = np.matmul(world_to_camera, coords_new)
+        camera_depth = p[2].copy()
         p[2][np.abs(p[2]) < self.eps] = self.eps
         p[0] = (p[0] * intrinsic[0][0]) / p[2] + intrinsic[0][2]
         p[1] = (p[1] * intrinsic[1][1]) / p[2] + intrinsic[1][2]
         pi = np.round(p).astype(np.int32)  # simply round the projected coordinates
         inside_mask = (
-                (pi[0] >= self.cut_bound)
+                np.isfinite(camera_depth)
+                * (camera_depth > self.eps)
+                * (pi[0] >= self.cut_bound)
                 * (pi[1] >= self.cut_bound)
                 * (pi[0] < self.image_dim[0] - self.cut_bound)
                 * (pi[1] < self.image_dim[1] - self.cut_bound)
@@ -127,8 +131,7 @@ class PointCloudToImageMapper(object):
         if depth is not None:
             depth_cur = depth[pi[1][inside_mask], pi[0][inside_mask]]
             occlusion_mask = (
-                    np.abs(
-                        depth[pi[1][inside_mask], pi[0][inside_mask]] - p[2][inside_mask]) <= self.vis_thres * depth_cur
+                    (depth_cur > 0) & (np.abs(depth_cur - camera_depth[inside_mask]) <= self.vis_thres)
             )
             inside_mask[inside_mask == True] = occlusion_mask
         else:
@@ -138,30 +141,16 @@ class PointCloudToImageMapper(object):
         # NOTE detect occlusion
         pi_x_ = pi[1][inside_mask]
         pi_y_ = pi[0][inside_mask]
-        pi_depth_ = pi[2][inside_mask]
+        pi_depth_ = camera_depth[inside_mask]
+
+        if not inside_mask.any():
+            return mapping.T
 
         inds = (pi_x_ * self.image_dim[0] + pi_y_).astype(np.int32)
         _, inds = np.unique(inds, return_inverse=True)
 
-        # depth_min = torch_scatter.scatter_min(
-        #     torch.from_numpy(pi_depth_).float(), torch.from_numpy(inds).long(), dim=0
-        # )[0]
-        # Convert numpy arrays to PyTorch tensors
-        pi_depth_tensor = torch.from_numpy(pi_depth_).float()
-        inds_tensor = torch.from_numpy(inds).long()
-
-        # Initialize the result tensor with a large value
-        depth_min = torch.full((inds_tensor.max() + 1,), float('inf'), dtype=torch.float32,
-                               device=pi_depth_tensor.device)
-
-        # Scatter minimum operation in pure PyTorch
-        depth_min.index_put_((inds_tensor,), pi_depth_tensor, accumulate=False)
-        # Handle entries not updated (still set to 'inf')
-        valid_mask = depth_min != float('inf')
-        depth_min[~valid_mask] = 0  # Replace with an appropriate default if necessary
-
-        depth_min = torch.where(depth_min < 0.0, 0.0, depth_min)
-        depth_min = depth_min.numpy()
+        depth_min = np.full(inds.max() + 1, np.inf)
+        np.minimum.at(depth_min, inds, pi_depth_)
         depth_min_broadcast = depth_min[inds]
 
         THRESHOLD = 0.2  # (meter)

@@ -1,0 +1,4 @@
+# Original LLaVA discovery, Grounding DINO, and SAM runtime; install PyTorch separately.
+transformers==5.19.0
+accelerate==1.15.0
+bitsandbytes==0.50.2

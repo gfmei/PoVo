@@ -1,0 +1,24 @@
+# Selected ScanNet200 instance segmentation pipeline.
+foundation_model:
+  clip_model: ViT-B/32
+  clip_dim: 512
+  reranker_model: Qwen/Qwen3.5-9B
+  reranker_revision: c202236235762e1c871ad0ccb60c8ee5ba337b9a
+  reranker_load_in_4bit: true
+data:
+  img_dim:
+  - 640
+  - 480
+  cut_num_pixel_boundary: 10
+  depth_scale: 1000.0
+  max_frames: 50
+clustering:
+  cluster_budget: 128
+  merge_threshold: 0.5
+graph:
+  appearance_mode: clip
+  radius: 0.2
+  window_size: 32
+  resolution: 0.01
+  chunk_size: 8192
+  curve_orders: [morton, hilbert, morton_yzx, hilbert_yzx]

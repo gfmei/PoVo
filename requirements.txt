@@ -1,0 +1,17 @@
+# ScanNet200 preparation, instance recognition, and visualization.
+torch>=2.2
+torchvision>=0.17
+numpy>=1.23
+scipy
+opencv-python-headless
+Pillow
+PyYAML
+tqdm
+pandas
+plyfile
+imageio
+pypng
+clip @ git+https://github.com/openai/CLIP.git@d05afc436d78f1c48dc0dbf8e5980a9d471f35f6
+hydra-core
+iopath
+matplotlib

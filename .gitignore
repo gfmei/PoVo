@@ -1,0 +1,31 @@
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local editor settings
+.idea/
+.vscode/
+
+# Downloaded model weights
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Generated visualizations and evaluation output
+ply/
+/result.txt
+/only.txt
+/reverse_norm_ids.npy
+/datasets/scannet/reverse_norm_ids.npy
+/gtsem_temp.npy
+/gtinst_temp.npy
+/results_temp.npy
+/benchmark_results/
+
+# Local execution logs
+*.log
+/logs/

@@ -1,0 +1,5 @@
+# Qwen3.5 selective instance recognition runtime; install PyTorch separately.
+transformers==5.19.0
+accelerate==1.15.0
+bitsandbytes==0.50.2
+flash-linear-attention==0.5.2

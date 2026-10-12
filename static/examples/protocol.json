@@ -1,0 +1,23 @@
+{
+  "workflow": "Selected SAM2 + ViT-L instance crops + Qwen3.5 recognition",
+  "frames_per_scene": 50,
+  "supplied_foreground_classes": 198,
+  "examples": [
+    "scene0645_01"
+  ],
+  "selection": {
+    "criterion": "Highest localized class accuracy among validation scenes with at least 20 localized predicted instances; semantic AP breaks ties",
+    "eligible_scenes": 34,
+    "minimum_localized_instances": 20,
+    "source_report_sha256": "fa8aa840095153707fa4c75343768c80f80b5a4716bf6b7345a6d30c53f0a942"
+  },
+  "example_metrics": {
+    "scene": "scene0645_01",
+    "correct": 24,
+    "localized": 27,
+    "class_accuracy": 0.8888888888888888,
+    "semantic_ap": 0.25289936401047514
+  },
+  "scope": "Selected showcase; full-split results are reported separately in static/results/validation.json",
+  "ground_truth_use": "Evaluation and example selection only; predictions are unchanged."
+}

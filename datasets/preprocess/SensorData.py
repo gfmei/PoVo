@@ -2,7 +2,7 @@
 import os, struct
 import numpy as np
 import zlib
-import imageio
+import imageio.v2 as imageio
 import cv2
 import png
 
@@ -11,14 +11,22 @@ COMPRESSION_TYPE_DEPTH = {-1:'unknown', 0:'raw_ushort', 1:'zlib_ushort', 2:'occi
 
 class RGBDFrame():
 
-  def load(self, file_handle):
+  def load(self, file_handle, load_data=True):
     self.camera_to_world = np.asarray(struct.unpack('f'*16, file_handle.read(16*4)), dtype=np.float32).reshape(4, 4)
     self.timestamp_color = struct.unpack('Q', file_handle.read(8))[0]
     self.timestamp_depth = struct.unpack('Q', file_handle.read(8))[0]
     self.color_size_bytes = struct.unpack('Q', file_handle.read(8))[0]
     self.depth_size_bytes = struct.unpack('Q', file_handle.read(8))[0]
-    self.color_data = ''.join(struct.unpack('c'*self.color_size_bytes, file_handle.read(self.color_size_bytes)))
-    self.depth_data = ''.join(struct.unpack('c'*self.depth_size_bytes, file_handle.read(self.depth_size_bytes)))
+    if load_data:
+      self.color_data = file_handle.read(self.color_size_bytes)
+      self.depth_data = file_handle.read(self.depth_size_bytes)
+      if len(self.color_data) != self.color_size_bytes or len(self.depth_data) != self.depth_size_bytes:
+        raise EOFError('Truncated ScanNet RGB-D frame')
+    else:
+      size = self.color_size_bytes + self.depth_size_bytes
+      if file_handle.tell() + size > os.fstat(file_handle.fileno()).st_size:
+        raise EOFError('Truncated ScanNet RGB-D frame')
+      file_handle.seek(size, 1)
 
 
   def decompress_depth(self, compression_type):
@@ -45,17 +53,18 @@ class RGBDFrame():
 
 class SensorData:
 
-  def __init__(self, filename):
+  def __init__(self, filename, load_frames=True):
     self.version = 4
-    self.load(filename)
+    self.load(filename, load_frames=load_frames)
 
 
-  def load(self, filename):
+  def load(self, filename, load_frames=True):
+    self.filename = filename
     with open(filename, 'rb') as f:
       version = struct.unpack('I', f.read(4))[0]
       assert self.version == version
       strlen = struct.unpack('Q', f.read(8))[0]
-      self.sensor_name = ''.join(struct.unpack('c'*strlen, f.read(strlen)))
+      self.sensor_name = f.read(strlen).decode('utf-8')
       self.intrinsic_color = np.asarray(struct.unpack('f'*16, f.read(16*4)), dtype=np.float32).reshape(4, 4)
       self.extrinsic_color = np.asarray(struct.unpack('f'*16, f.read(16*4)), dtype=np.float32).reshape(4, 4)
       self.intrinsic_depth = np.asarray(struct.unpack('f'*16, f.read(16*4)), dtype=np.float32).reshape(4, 4)
@@ -68,11 +77,29 @@ class SensorData:
       self.depth_height =  struct.unpack('I', f.read(4))[0]
       self.depth_shift =  struct.unpack('f', f.read(4))[0]
       num_frames =  struct.unpack('Q', f.read(8))[0]
+      self.num_frames = num_frames
       self.frames = []
+      self.frame_offsets = []
       for i in range(num_frames):
+        self.frame_offsets.append(f.tell())
         frame = RGBDFrame()
-        frame.load(f)
+        frame.load(f, load_data=load_frames)
         self.frames.append(frame)
+
+
+  def read_frames(self, indices):
+    """Read only selected payloads after inspecting all camera poses."""
+    indices = sorted(set(indices))
+    if any(index < 0 or index >= self.num_frames for index in indices):
+      raise ValueError('Selected frame is outside the sensor sequence')
+    result = {}
+    with open(self.filename, 'rb') as handle:
+      for index in indices:
+        handle.seek(self.frame_offsets[index])
+        frame = RGBDFrame()
+        frame.load(handle)
+        result[index] = frame
+    return result
 
 
   def export_depth_images(self, output_path, image_size=None, frame_skip=1):
@@ -81,7 +108,7 @@ class SensorData:
     print('exporting', len(self.frames)//frame_skip, ' depth frames to', output_path)
     for f in range(0, len(self.frames), frame_skip):
       depth_data = self.frames[f].decompress_depth(self.depth_compression_type)
-      depth = np.fromstring(depth_data, dtype=np.uint16).reshape(self.depth_height, self.depth_width)
+      depth = np.frombuffer(depth_data, dtype=np.dtype('<u2')).reshape(self.depth_height, self.depth_width)
       if image_size is not None:
         depth = cv2.resize(depth, (image_size[1], image_size[0]), interpolation=cv2.INTER_NEAREST)
       #imageio.imwrite(os.path.join(output_path, str(f) + '.png'), depth)

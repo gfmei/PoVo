@@ -1,0 +1,148 @@
+{
+  "schema_version": 3,
+  "dataset": "ScanNet200 official validation split",
+  "scene_count": 312,
+  "evaluated_semantic_classes": 183,
+  "provided_vocabulary_classes": 198,
+  "primary_protocol": {
+    "task": "Provided-vocabulary open-vocabulary instance segmentation",
+    "vocabulary_source": "The same supplied 198 ScanNet200 foreground class names for every scene; no scene-ground-truth filtering or Qwen category discovery",
+    "qwen_role": "Optional reranking among each selected instance's top-five supplied labels; the CLIP-only baseline uses no Qwen inference",
+    "frames_per_scene": 50,
+    "selected_views": 15600,
+    "mask_generator": "SAM2.1 Hiera large; unchanged per-frame input caches reused",
+    "instance_preparation": "SAM2 50-view masks, point-curve graph and constrained spectral clustering",
+    "crop_encoder": "CLIP ViT-L/14@336px",
+    "reranker": "Qwen/Qwen3.5-9B",
+    "reranker_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "precision": "NF4 double quantization",
+    "thinking": false,
+    "candidate_count": 5,
+    "views_per_rerank_request": 2,
+    "source_git_revision": "2da8b278b255e95c96208e2103471320ee8da98f",
+    "crop_recognition": "Equal pooling of context and target-focused crops; six normalized text prompts per class",
+    "retained_background_color_fraction": 0.25,
+    "focus_crop_weight": 0.5,
+    "mask_source_git_revision": "5724e3009f291323d99fe9fa7eaed472c7d3ed7a"
+  },
+  "qwen35_50": {
+    "scene_count": 312,
+    "frames": 50,
+    "instance_count": 16910,
+    "class_agnostic": {
+      "all_ap": 0.12208479388376436,
+      "all_ap_50%": 0.2391476159852911,
+      "all_ap_25%": 0.4209041889649158,
+      "evaluated_classes": 1,
+      "confidence": "instance objectness; recognition labels are ignored"
+    },
+    "frequency_groups": {
+      "head": {
+        "evaluated_classes": 64,
+        "ap": 0.0977851432591622,
+        "ap50%": 0.17929476718916723,
+        "ap25%": 0.27347808975931315
+      },
+      "common": {
+        "evaluated_classes": 65,
+        "ap": 0.11514638099843351,
+        "ap50%": 0.16606735573852538,
+        "ap25%": 0.22639233899971312
+      },
+      "tail": {
+        "evaluated_classes": 54,
+        "ap": 0.16589117523693847,
+        "ap50%": 0.26449367968226994,
+        "ap25%": 0.2994197503155926
+      }
+    },
+    "semantic": {
+      "all_ap": 0.12404856500699037,
+      "all_ap_50%": 0.19973716899428104,
+      "all_ap_25%": 0.26440855899792015,
+      "evaluated_classes": 183,
+      "localized": 3750,
+      "top1_correct": 2291,
+      "top5_correct": 3175,
+      "top1_accuracy_localized": 0.6109333333333333,
+      "top5_accuracy_localized": 0.8466666666666667,
+      "confusions": {
+        "chair -> office chair": 125,
+        "book -> bookshelf": 70,
+        "trash can -> trash bin": 66,
+        "pillow -> cushion": 36,
+        "table -> desk": 30,
+        "window -> blinds": 24,
+        "ceiling -> ceiling light": 20,
+        "recycling bin -> trash bin": 18,
+        "armchair -> sofa chair": 17,
+        "chair -> armchair": 17
+      }
+    }
+  },
+  "reranking_diagnostics": {
+    "instances": 16910,
+    "reranked": 15309,
+    "changed_labels": 9281,
+    "unknown_or_invalid": 213,
+    "unknown_final_labels": 0,
+    "supported": 16892,
+    "target_masks": 48648,
+    "localized": 3750,
+    "clip_correct": 1937,
+    "qwen_correct": 2291,
+    "top5_correct": 3175,
+    "reranking_fixes": 615,
+    "reranking_regressions": 261
+  },
+  "verification": {
+    "scene_count": 312,
+    "same_masks_and_objectness": true,
+    "same_native_rgb_and_view_selection": true,
+    "ground_truth_matches_prepared_dataset": true,
+    "all_crop_inputs_and_source_hashes_verified": true,
+    "all_rerank_candidates_and_images_verified": true,
+    "all_final_labels_and_selected_class_scores_verified": true,
+    "all_outputs_finite": true
+  },
+  "report_sha256": "fa8aa840095153707fa4c75343768c80f80b5a4716bf6b7345a6d30c53f0a942",
+  "limitations": [
+    "Settings were selected and evaluated on ScanNet validation; the full split includes the selection scenes.",
+    "Every scan uses the same supplied 198 foreground names.",
+    "This evaluation uses fifty sampled RGB-D views per scene."
+  ],
+  "validation_checks": {
+    "measured_source_regression_tests_passed": 284,
+    "measured_source_git_revision": "2da8b278b255e95c96208e2103471320ee8da98f",
+    "retained_pipeline_regression_tests_passed": 243,
+    "cached_312_scene_reevaluation": {
+      "scene_count": 312,
+      "same_semantic_and_class_agnostic_metrics": true,
+      "same_assignments_labels_and_scores": true,
+      "source_report_sha256": "fa8aa840095153707fa4c75343768c80f80b5a4716bf6b7345a6d30c53f0a942",
+      "reevaluation_report_sha256": "21b17238478e755273c9817d79be142007b33632555259a1d74250370daf1184"
+    },
+    "fresh_50_view_recognition": {
+      "scene": "scene0645_01",
+      "frames": 50,
+      "same_masks_objectness_fallback_and_views": true,
+      "same_target_pixels": true,
+      "same_final_classes": true,
+      "same_final_scores": false,
+      "max_score_difference": 8.046627044677734e-07,
+      "localized": 27,
+      "correct": 24,
+      "accuracy": 0.8888888888888888
+    },
+    "cleanup_source_sha256": {
+      "tools/recognize_instances.py": "b3f7e2cd7b72ce6e8c572efc099533d52c03b338b5b1ebf4df9cd70da97e2420",
+      "models/vlm.py": "e9128c73b2d1bed33c4b463d0c7abcfd5fe2708f112c867ea59dd57fcbcbbdee",
+      "models/sam2mask.py": "c0f7467fe4f4dd24caca750d54e23e9cfd0c7a0b1872701f8149f6041c6e97ed",
+      "exp/eval_inst.py": "0dd53f00854dafe1c880d7828ac61511c16020f34fd4f266ab514a91e9aa663a",
+      "libs/instance_eval_util.py": "cb2ae9652319f20a405d4f02d644a3f6794937a1d503358a6afdab604dc2d0be",
+      "datasets/data_loader.py": "d9b6d3ee35cf870a9ae871a8e9a025db553cba38edde18dbad95fefd8119bbd5",
+      "exp/scannet200_splits.py": "206e0df0bf9694ccee446b1454c93dbd47168c4d7c87e4eb28c8b8ec1e186128",
+      "datasets/meta_data/scannet200_constants.py": "202edc68c4790a7afdfbebb939a08899a7111727f5c35190e7b39911383eae6b"
+    }
+  }
+}

@@ -1,154 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="description" content="Vocabulary-Free 3D Instance Segmentation with Vision and Language Assistant">
-    <meta name="keywords" content="Vocabulary-Free, 3D Vision and Language Assistant">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PoVo</title>
-
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="./static/css/bulma.min.css">
-    <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
-    <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
-    <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="./static/css/index.css">
-
-    <!-- MathJax -->
-    <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-</head>
-
-<body>
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-body">
-            <div class="container is-max-desktop">
-                <div class="columns is-centered">
-                    <div class="column has-text-centered">
-                        <!-- Title -->
-                        <h1 class="title is-1 publication-title">
-                            Vocabulary-Free 3D Instance Segmentation with Vision and Language Assistant
-                        </h1>
-
-                        <!-- Authors -->
-                        <div class="is-size-5 publication-authors">
-                            <span class="author-block">
-                                <a href="https://scholar.google.com/citations?user=VsmIGqsAAAAJ" target="_blank">Guofeng Mei</a>,
-                            </span>
-                            <span class="author-block">
-                                <a href="https://scholar.google.com/citations?user=djO2pVUAAAAJ" target="_blank">Luigi Riz</a>,
-                            </span>
-                            <span class="author-block">
-                                <a href="https://scholar.google.com/citations?user=KBZ3zrEAAAAJ" target="_blank">Yiming Wang</a>,
-                            </span>
-                            <span class="author-block">
-                                <a href="https://scholar.google.com/citations?user=BQ7li6AAAAAJ" target="_blank">Fabio Poiesi</a>
-                            </span>
-                        </div>
-
-                        <!-- Affiliations -->
-                        <div class="is-size-5 publication-authors">
-                            <span class="author-block">Fondazione Bruno Kessler, Italy</span>
-                        </div>
-
-                        <!-- Links -->
-                        <div class="publication-links">
-                            <a class="external-link button is-normal is-rounded is-dark" href="https://www.arxiv.org/pdf/2408.10652" target="_blank">
-                                <span class="icon" style="color: white;">
-                                    <i class="ai ai-arxiv"></i>
-                                </span>
-                                <span>arXiv</span>
-                            </a>
-                            <a class="external-link button is-normal is-rounded is-dark" href="https://github.com/gfmei/PoVo" style="padding: 10px; display: inline-flex; align-items: center;" target="_blank">
-                                <span class="icon" style="color: black;">
-                                    <i class="fab fa-github"></i>
-                                </span>
-                                <span>Code</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <meta content="PoVo: explore real ScanNet predictions and measured results from SAM2, ViT-L crop recognition, and Qwen3.5 reranking." name="description"/>
+  <meta content="#146c58" name="theme-color"/>
+  <title>
+   PoVo · Vocabulary-Free 3D Instance Segmentation
+  </title>
+  <link href="static/css/index.css?v=3" rel="stylesheet"/>
+  <script defer="" src="static/js/viewer.js?v=3">
+  </script>
+ </head>
+ <body>
+  <a class="skip-link" href="#main">
+   Skip to content
+  </a>
+  <header class="site-header wrap">
+   <a aria-label="PoVo home" class="wordmark" href="#">
+    PoVo
+    <span class="wordmark-dot">
+     .
+    </span>
+   </a>
+   <nav aria-label="Main navigation">
+    <a href="#explore">
+     Explore
+    </a>
+    <a href="#results">
+     Results
+    </a>
+    <a href="#method">
+     Method
+    </a>
+    <a href="https://github.com/gfmei/PoVo">
+     GitHub ↗
+    </a>
+   </nav>
+  </header>
+  <main id="main">
+   <section class="hero wrap">
+    <p class="eyebrow">
+     3DV 2025 · Fondazione Bruno Kessler
+    </p>
+    <h1>
+     Discover the objects.
+     <br/>
+     <span>
+      Understand the scene.
+     </span>
+    </h1>
+    <p class="paper-title">
+     Vocabulary-Free 3D Instance Segmentation
+     <br/>
+     with Vision and Language Assistant
+    </p>
+    <p class="hero-description">
+     From posed images to 3D object instances. PoVo connects observations across views, separates objects in 3D, and recognizes them with instance crops and Qwen3.5.
+    </p>
+    <p class="authors">
+     <a href="https://scholar.google.com/citations?user=VsmIGqsAAAAJ">
+      Guofeng Mei
+     </a>
+     ,
+     <a href="https://scholar.google.com/citations?user=djO2pVUAAAAJ">
+      Luigi Riz
+     </a>
+     ,
+     <a href="https://scholar.google.com/citations?user=KBZ3zrEAAAAJ">
+      Yiming Wang
+     </a>
+     ,
+     <a href="https://scholar.google.com/citations?user=BQ7li6AAAAAJ">
+      Fabio Poiesi
+     </a>
+    </p>
+    <div class="actions">
+     <a class="button primary" href="#explore">
+      Explore real predictions ↓
+     </a>
+     <a class="button" href="https://arxiv.org/abs/2408.10652">
+      Read the paper ↗
+     </a>
+     <a class="button" href="https://github.com/gfmei/PoVo">
+      Get the code ↗
+     </a>
+    </div>
+    <figure class="teaser">
+     <img alt="ScanNet scene0645_01 as original RGB, ground-truth classes, and PoVo predictions" src="static/examples/prediction.webp" width="1200" height="340"/>
+     <figcaption>
+      Real 50-view inference on scene0645_01: original RGB, ground-truth classes, and the selected PoVo configuration.
+     </figcaption>
+    </figure>
+   </section>
+   <section class="explore-section" id="explore">
+    <div class="wrap">
+     <div class="section-heading">
+      <div>
+       <p class="eyebrow">
+        Actual inference · Interactive 3D
+       </p>
+       <h2>
+        See what the model sees.
+       </h2>
+      </div>
+      <p>
+       Rotate the same point cloud and compare its color, human annotations, and predicted instances.
+      </p>
+     </div>
+     <div class="viewer-card">
+      <div class="viewer-toolbar">
+       <span>Scene <strong id="scene-name">scene0645_01</strong></span>
+       <div aria-label="Point cloud display" class="view-tabs" role="group">
+        <button aria-pressed="false" data-mode="rgb">
+         RGB
+        </button>
+        <button aria-pressed="false" data-mode="gt">
+         Ground truth
+        </button>
+        <button aria-pressed="true" data-mode="prediction">
+         Prediction
+        </button>
+       </div>
+       <button class="reset-button" id="reset-view">
+        Reset view
+       </button>
+      </div>
+      <div class="viewer-layout">
+       <div class="canvas-container">
+        <canvas aria-label="Interactive ScanNet point cloud. Drag or use arrow keys to rotate; scroll or use plus and minus to zoom." id="point-viewer" tabindex="0">
+        </canvas>
+        <div aria-live="polite" id="viewer-status" role="status">
+         Loading real point-cloud data…
         </div>
-    </section>
-
-    <!-- Teaser Section -->
-    <section class="hero teaser">
-        <div class="container is-max-desktop">
-            <div class="hero-body" style="display: flex; flex-direction: column;">
-                <img src="./static/images/teaser.png" alt="PoVo" style="max-height: 400px; align-self: center;" />
-                <h2 class="subtitle has-text-centered" style="margin-top: 20px;">
-                    We introduce a vocabulary-free approach to address 3D instance segmentation that leverages language and vision assistants, moving beyond the limitations of open-vocabulary approaches.
-                </h2>
-            </div>
+        <div hidden="" id="point-tooltip" role="status">
         </div>
-    </section>
-
-    <!-- Abstract Section -->
-    <section class="section">
-        <div class="container is-max-desktop">
-            <div class="columns is-centered has-text-centered">
-                <div class="column is-four-fifths">
-                    <h2 class="title is-3">Abstract</h2>
-                    <div class="content has-text-justified">
-                        <p>Most recent 3D instance segmentation methods are open vocabulary, offering greater flexibility than closed-vocabulary methods. Yet, they are limited to reasoning within a specific set of concepts, i.e., the vocabulary, prompted by the user at test time. In essence, these models cannot reason in an open-ended fashion, i.e., answering "List the objects in the scene."</p>
-                        <p><b>We introduce the first method to address 3D instance segmentation in a setting that is void of any vocabulary prior, namely a vocabulary-free setting. We leverage a large vision-language assistant and an open-vocabulary 2D instance segmenter to discover and ground semantic categories on the posed images.</b></p>
-                        <p>We evaluate our method using ScanNet200 and Replica, outperforming existing methods in both vocabulary-free and open-vocabulary settings.</p>
-                    </div>
-                </div>
-            </div>
+        <p class="canvas-hint">
+         Drag to rotate · Scroll to zoom · Hover for labels
+        </p>
+       </div>
+       <aside class="viewer-details">
+        <p class="eyebrow" id="mode-title">
+         PoVo prediction
+        </p>
+        <h3 id="scene-title">
+         scene0645_01
+        </h3>
+        <p id="scene-details">
+         Loading…
+        </p>
+        <p class="small" id="scene-accuracy">
+         88.89% class accuracy · 24/27 localized instances · IoU ≥ 0.5
+        </p>
+        <label class="control-label" for="color-select">
+         Color by
+        </label>
+        <select id="color-select">
+         <option value="semantic">
+          Class
+         </option>
+         <option value="instance">
+          Instance
+         </option>
+        </select>
+        <label class="control-label" for="height-range">
+         Show height
+         <span id="height-value">
+          85%
+         </span>
+        </label>
+        <input id="height-range" max="100" min="20" type="range" value="85"/>
+        <p class="small">
+         Lower the height to look inside the room. Gray indicates background, unassigned points, or an unknown class.
+        </p>
+        <div aria-label="Visible category legend" class="legend" id="class-legend">
         </div>
-    </section>
-
-    <!-- Method Section -->
-    <section class="section">
-        <div class="container is-max-desktop">
-            <div class="columns is-centered has-text-centered">
-                <div class="column is-full-width">
-                    <h2 class="title is-3">Method</h2>
-                    <img src="./static/images/block.png" alt="Architecture of PoVo" />
-                    <div class="content has-text-justified" style="margin-top: 2rem;">
-                        <p>Given the point cloud \(\mathcal{P}\) of a 3D scene and the corresponding set of \(N\) posed images \(\mathcal{V} = \{I_n\}_{n=1}^N\),
-                            our method predicts 3D instance masks with their associated semantic labels without knowing a predefined vocabulary. Our method first utilizes a large vision-language assistant and an open-vocabulary 2D instance segmentation model to identify and ground objects on each posed image \(I_n\),
-                            forming the scene vocabulary \(\mathcal{C}\) while mitigating the risk of hallucination by the vision-language assistant.</p>
-                        <p>Meanwhile, we partition the 3D scene \(\mathcal{P}\) into geometrically-coherent superpoints \(\mathcal{Q}\), to serve as initial seeds for 3D instance proposals.
-                            Then, with the semantic-aware instance masks from multi-view images, we propose a novel procedure in representing superpoints and guiding their merging into 3D instance masks,
-                            using both the grounded semantic labels and their instance masks.</p>
-                        <p>By projecting each 3D superpoint onto image planes and checking its overlapping with 2D instance masks, we aggregate semantic labels from multiple views within each superpoint.
-                            Once each superpoint is associated with a semantic label, we perform superpoint merging to form 3D instance masks via spectral clustering. This involves defining an affinity matrix among superpoints constructed by both mask coherence scores computed with the 2D instance masks and semantic coherence scores computed with the per-superpoint textual embeddings.</p>
-                        <p>Finally, for each 3D instance proposal, we obtain the text-aligned representation by aggregating the CLIP visual representation of multi-scale object crops from multi-view images.
-                            We further enrich this vision-based representation with textual representation derived from the merged superpoints.
-                            This text-aligned mask representation enables the semantic assignment to instance masks with the scene vocabulary \(\mathcal{C}\).</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="content has-text-centered">
-                <a class="icon-link" href="https://www.arxiv.org/pdf/2408.10652" target="_blank" title="View Paper on arXiv">
-                    <i class="fas fa-file-pdf fa-2x"></i>
-                </a>
-                <a class="icon-link" href="https://github.com/gfmei/PoVo" target="_blank" title="View Project on GitHub">
-                    <i class="fab fa-github fa-2x"></i>
-                </a>
-            </div>
-            <div class="columns is-centered" style="margin-top: 20px;">
-                <div class="column is-8">
-                    <div class="content has-text-centered">
-                        <p>This website is licensed under a <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="license" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>.</p>
-                        <p>Template adapted from <a href="https://github.com/nerfies/nerfies.github.io" target="_blank">Nerfies</a>.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-</body>
-
+       </aside>
+      </div>
+     </div>
+     <p class="scope-note">
+      <strong>Selected showcase: 88.89% localized class accuracy (24/27).</strong>
+      scene0645_01 has the highest class accuracy among validation scans with at least 20 predicted instances
+      having ground-truth IoU ≥ 0.5. Accuracy uses the complete original cloud; RGB, ground truth, and predictions
+      share the same 30,000 displayed point indices and class palette. This selected example is separate from
+      the complete validation benchmark below.
+     </p>
+     <noscript>
+      <p>
+       Enable JavaScript to explore the point clouds. A static example is available below.
+      </p>
+     </noscript>
+     <figure class="static-example">
+      <img alt="scene0645_01 as original RGB, ground-truth classes, and PoVo predictions" height="340" loading="lazy" src="static/examples/prediction.webp" width="1200"/>
+      <figcaption>
+       A fixed view of the same real point clouds. Explore above to inspect occlusion, missing objects, and instance separation.
+      </figcaption>
+     </figure>
+    </div>
+   </section>
+   <section class="wrap section-space" id="results">
+    <div class="section-heading">
+     <div>
+      <p class="eyebrow">Complete validation · Selected configuration</p>
+      <h2>Recognize objects.<br/>Measure every scene.</h2>
+     </div>
+     <p>SAM2 proposals, point-curve clustering, matched ViT-L instance crops, and selective Qwen3.5 recognition.</p>
+    </div>
+    <div class="metric-grid">
+     <article class="metric-card"><p>Semantic instance AP</p><strong>12.40<span class="unit">%</span></strong><small>183 classes with eligible ground truth</small></article>
+     <article class="metric-card"><p>Semantic instance AP50</p><strong>19.97<span class="unit">%</span></strong><small>Instance IoU threshold 0.5</small></article>
+     <article class="metric-card"><p>Semantic instance AP25</p><strong>26.44<span class="unit">%</span></strong><small>Instance IoU threshold 0.25</small></article>
+    </div>
+    <p class="scope-note">Complete official ScanNet200 validation: <strong>312 scans × 50 RGB-D views</strong>,
+     198 supplied foreground names and 16,910 predicted instances. Qwen3.5 reranks each ambiguous instance's
+     top-five supplied labels. Localized class accuracy is <strong>61.09% (2,291/3,750)</strong> at IoU ≥ 0.5;
+     top-five candidate accuracy is 84.67%. Class-agnostic AP/AP50/AP25 is 12.21/23.91/42.09%.</p>
+    <p class="scope-note">Every scan completed; input fingerprints, masks, candidate lists, labels, and scores were verified.
+     Settings were selected and evaluated on ScanNet validation, and the full split includes selection scenes.
+     <a href="https://github.com/gfmei/PoVo#measured-results">Configuration and results ↗</a> ·
+     <a href="static/results/validation.json">Verified metrics JSON ↗</a></p>
+   </section>
+   <section class="method-section" id="method">
+    <div class="wrap section-space">
+     <p class="eyebrow">
+      How PoVo works
+     </p>
+     <h2>
+      From observations to instances.
+     </h2>
+     <div class="steps">
+      <article>
+       <span>
+        01
+       </span>
+       <h3>
+        Generate masks
+       </h3>
+       <p>
+        SAM2 generates masks from 50 selected views. Cached CLIP features connect their image evidence to scene points.
+       </p>
+      </article>
+      <article>
+       <span>
+        02
+       </span>
+       <h3>
+        Connect in 3D
+       </h3>
+       <p>
+        Fuse image evidence at the points. Morton and Hilbert windows propose neighboring superpoints, checked against their actual boundaries.
+       </p>
+      </article>
+      <article>
+       <span>
+        03
+       </span>
+       <h3>
+        Separate &amp; recognize
+       </h3>
+       <p>
+        Constrained spectral clustering forms instances. ViT-L combines instance and context crops with six text prompts per class; Qwen3.5 resolves ambiguous candidates.
+       </p>
+      </article>
+     </div>
+    </div>
+   </section>
+   <section class="wrap section-space citation-section">
+    <div>
+     <p class="eyebrow">
+      Research
+     </p>
+     <h2>
+      Cite PoVo.
+     </h2>
+     <p>
+      The published paper evaluates vocabulary-free 3D instance segmentation on ScanNet200 and Replica. The experiments above describe subsequent implementation changes.
+     </p>
+    </div>
+    <pre><code>@inproceedings{mei2025povo,
+  title={Vocabulary-Free 3D Instance Segmentation
+         with Vision and Language Assistant},
+  author={Mei, Guofeng and Riz, Luigi and
+          Wang, Yiming and Poiesi, Fabio},
+  booktitle={International Conference on 3D Vision},
+  year={2025}
+}</code></pre>
+   </section>
+  </main>
+  <footer class="wrap">
+   <a class="wordmark" href="#">
+    PoVo
+    <span class="wordmark-dot">
+     .
+    </span>
+   </a>
+   <p>
+    Code:
+    <a href="LICENSE">
+     Apache 2.0
+    </a>
+    · Website:
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/">
+     CC BY-SA 4.0
+    </a>
+    <br/>
+    Original website adapted from
+    <a href="https://github.com/nerfies/nerfies.github.io">
+     Nerfies
+    </a>
+    . ScanNet examples follow the
+    <a href="https://kaldir.vc.in.tum.de/scannet/ScanNet_TOS.pdf">
+     ScanNet terms of use
+    </a>
+    .
+   </p>
+   <a href="https://github.com/gfmei/PoVo/issues">
+    Questions &amp; issues ↗
+   </a>
+  </footer>
+ </body>
 </html>

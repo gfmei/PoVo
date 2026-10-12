@@ -1,0 +1,54 @@
+{
+  "dataset": "ScanNet200 official validation split",
+  "scene_count": 312,
+  "frames_per_scene": 50,
+  "task": "Class-agnostic instance segmentation",
+  "configuration": "configs/scannet200_mask_graph.yaml",
+  "baseline_configuration": "configs/scannet200.yaml",
+  "settings": {
+    "appearance_mode": "clip",
+    "conflict_fraction": 0.5,
+    "non_neighbor_weight": 0.05,
+    "cluster_budget": 128,
+    "merge_threshold": 0.5
+  },
+  "baseline": {
+    "all_ap": 0.12208479388376436,
+    "all_ap_50%": 0.2391476159852911,
+    "all_ap_25%": 0.4209041889649158,
+    "all_rc": 0.3162349538513887,
+    "all_rc_50%": 0.47849942580068905,
+    "all_rc_25%": 0.663902003317596
+  },
+  "improved": {
+    "all_ap": 0.12759531474437424,
+    "all_ap_50%": 0.24767382509274175,
+    "all_ap_25%": 0.4295996493320134,
+    "all_rc": 0.31972268299944706,
+    "all_rc_50%": 0.4802858236570116,
+    "all_rc_25%": 0.662498405001914
+  },
+  "instance_count": 16547,
+  "protocol": "Paired comparison using identical cached SAM2 masks, selected views, point features, ground truth, minimum 100-point instance filter, and unchanged objectness scoring. Production clustering replayed on all 312 cached graphs; four fresh pipeline checks reproduced masks and objectness.",
+  "selection": "Parameters selected on development and confirmation subsets of this validation split; these scenes remain included in the complete split.",
+  "limitations": [
+    "New semantic recognition and Qwen reranking were not evaluated on the changed masks.",
+    "Recall at IoU 0.25 decreased slightly; all three reported AP metrics improved."
+  ],
+  "verification": {
+    "regression_tests_passed": 333,
+    "fresh_scenes": [
+      "scene0304_00",
+      "scene0011_00",
+      "scene0015_00",
+      "scene0568_00"
+    ],
+    "full_report_sha256": "37cfd8ee698266f5e05c139ec94a95de02f0125f3924dd361227bf049bb3f599",
+    "source_sha256": {
+      "libs/instance_clustering.py": "a4d5ec4c12319f86fed7624c8ce02bb48f628cb60c774ad0e95f15bcdcb27ca7",
+      "models/sam2mask.py": "59b351ef721e1aab1b71891a3a6816b4e6944ed780815d7cfdd7ffc4ef146160",
+      "models/povo.py": "26ee3192223ea32b03bc82069a753ba6eac2831fd2497aa0c1e5a0e0f5e4e28e",
+      "tools/recognize_instances.py": "a21b8d9ba2ee60ec6e79844862875c55c3bdc1307832b5007a1333628bacbe84"
+    }
+  }
+}

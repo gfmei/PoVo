@@ -1,6 +1,5 @@
 import os
-import sys
-from os.path import join, dirname, abspath, basename, splitext
+from os.path import join, dirname, basename, splitext
 from typing import Any, Dict
 
 import cv2
@@ -8,18 +7,7 @@ import numpy as np
 
 import torch
 from PIL import Image
-from glob2 import glob
-# Define directories
-current_dir = dirname(__file__)
-parent_dir = abspath(join(current_dir, '..'))
-libs_dir = abspath(join(parent_dir, 'libs'))
-data_dir = abspath(join(parent_dir, 'datasets'))
-# Add directories to sys.path
-sys.path.extend([current_dir, parent_dir, libs_dir, data_dir])
-
-# Project-specific imports
-from libs.lib_data import num_to_natural_torch
-
+from glob import glob
 
 class ScanReader:
     """
@@ -44,7 +32,7 @@ class ScanReader:
         Raises:
             FileNotFoundError: If the pose file is not found.
         """
-        pose_path = img_dir.replace('color', 'pose').replace('.jpg', '.txt')
+        pose_path = join(dirname(dirname(img_dir)), 'pose', splitext(basename(img_dir))[0] + '.txt')
         if not os.path.exists(pose_path):
             raise FileNotFoundError(f"Pose file not found at {pose_path}.")
         pose = np.loadtxt(pose_path, dtype=float)
@@ -73,7 +61,7 @@ class ScanReader:
             split (str): Dataset split ('train', 'val', 'test').
 
         Returns:
-            tuple: (points, spp, ins_gt) where:
+            tuple: (points, spp, ins_gt, sem_gt) where:
                 - points (torch.Tensor): Point cloud coordinates.
                 - spp (torch.Tensor): Superpoint labels.
                 - ins_gt (torch.Tensor): Instance ground truth labels.
@@ -84,13 +72,27 @@ class ScanReader:
         data_path = join(self.root_path, 'scannet200', split, scene_name)
         if not os.path.exists(data_path):
             raise FileNotFoundError(f"Point cloud data not found for scene {scene_id} at {data_path}.")
-        pcd_loader = torch.load(data_path, map_location=self.device)
-        points = torch.tensor(pcd_loader['coords'], device=self.device)
-        ins_gt = torch.tensor(pcd_loader['instance_ids'], device=self.device)
-        spp = torch.tensor(pcd_loader['spts'], device=self.device)
-        spp = num_to_natural_torch(spp, void_number=0) - 1
-        sem_gt = torch.tensor(pcd_loader['labels'], device=self.device)
+        pcd_loader = torch.load(data_path, map_location=self.device, weights_only=False)
+        points = torch.as_tensor(pcd_loader['coords'], dtype=torch.float32, device=self.device)
+        ins_gt = torch.as_tensor(pcd_loader['instance_ids'], dtype=torch.long, device=self.device)
+        spp = torch.as_tensor(pcd_loader['spts'], dtype=torch.long, device=self.device)
+        _, spp = torch.unique(spp, return_inverse=True)
+        sem_gt = torch.as_tensor(pcd_loader['labels'], dtype=torch.long, device=self.device)
         return points, spp, ins_gt, sem_gt
+
+    def get_point_colors(self, scene_id, split):
+        """Read mesh RGB, converting the prepared [-1, 1] colors to [0, 1]."""
+        path = join(self.root_path, 'scannet200', split, f'{scene_id}.pth')
+        data = torch.load(path, map_location='cpu', weights_only=False)
+        if 'colors' not in data:
+            return None
+        colors = torch.as_tensor(data['colors'], dtype=torch.float32)
+        if colors.shape != (len(data['coords']), 3):
+            raise ValueError('cached mesh colors must have one RGB vector per point')
+        finite = colors[torch.isfinite(colors).all(1)]
+        if finite.numel() and ((finite < -1).any() or (finite > 1).any()):
+            raise ValueError('prepared mesh colors must lie between -1 and 1')
+        return ((colors + 1) / 2).to(self.device)
 
     def get_intrinsic(self, scene_id):
         """
@@ -119,7 +121,7 @@ class ScanReader:
             FileNotFoundError: If the depth map file is not found.
             ValueError: If the depth map is invalid or cannot be read.
         """
-        depth_path = img_dir.replace('color', 'depth').replace('.jpg', '.png')
+        depth_path = join(dirname(dirname(img_dir)), 'depth', splitext(basename(img_dir))[0] + '.png')
         if not os.path.exists(depth_path):
             raise FileNotFoundError(f"Depth map not found at {depth_path}.")
         depth = cv2.imread(depth_path, cv2.IMREAD_ANYDEPTH)
@@ -137,24 +139,17 @@ class ScanReader:
         """
         return Image.open(img_dir).convert("RGB")
 
-    def get_mask(self, img_dir, split, scene_id):
-        """
-        Load segmentation masks for a given image directory.
-        Args:
-            img_dir (str): Directory of the input image.
-            split (str): Dataset split ('train', 'val', 'test').
-            scene_id (str): Scene identifier.
-        Returns:
-            torch.Tensor: Segmentation masks.
-        """
-        data_root_mask = join(self.root_path, 'scannet_mask2d', split, scene_id, 'sam')
-        color_name = os.path.splitext(os.path.basename(img_dir))[0]
-        mask_path = join(data_root_mask, f'maskraw_{color_name}.pth')
-        if not os.path.exists(mask_path):
-            raise FileNotFoundError(f"Mask file not found at {mask_path}.")
-        masks = torch.load(mask_path, map_location=self.device)['mask']
-        return masks
-    
+
+    def get_grounded_data(self, img_dir, split, scene_id, name='sam2'):
+        """Load cached masks, CLIP features, and confidences saved by save_mask."""
+        color_name = splitext(basename(img_dir))[0]
+        relative_path = join(split, scene_id, name, f'{color_name}.pth')
+        for folder in ('masks', 'mask_sam2'):
+            mask_path = join(self.root_path, folder, relative_path)
+            if os.path.exists(mask_path):
+                return torch.load(mask_path, map_location=self.device, weights_only=False)
+        raise FileNotFoundError(f"Grounded mask data not found for frame {color_name} of {scene_id}.")
+
     def save_mask(self, img_path: str, split: str, scene_id: str, grounded_data_dict: Dict[str, Any]) -> None:
         """
         Save segmentation masks for a given image.
@@ -169,7 +164,7 @@ class ScanReader:
             None
         """
         # Construct the directory path where masks will be saved
-        data_root_mask = join(self.root_path, 'mask_sam2', split, scene_id, 'sam2')
+        data_root_mask = join(self.root_path, 'masks', split, scene_id, 'sam2')
 
         # Extract the base name of the image file without extension
         color_name = splitext(basename(img_path))[0]
@@ -181,8 +176,13 @@ class ScanReader:
         os.makedirs(data_root_mask, exist_ok=True)
 
         # Save the segmentation masks using torch.save
-        try:
-            torch.save(grounded_data_dict, mask_path)
-            print(f"Mask successfully saved to {mask_path}")
-        except Exception as e:
-            print(f"Error saving mask to {mask_path}: {e}")
+        torch.save(grounded_data_dict, mask_path)
+
+
+class SelectedScanReader(ScanReader):
+    """Read the frame IDs selected in a prepared cache manifest."""
+    selected = None
+
+    def get_image_dirs(self, scene_id, split):
+        return [path for path in super().get_image_dirs(scene_id, split)
+                if self.selected is None or int(splitext(basename(path))[0]) in self.selected]

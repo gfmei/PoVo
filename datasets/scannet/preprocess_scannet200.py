@@ -2,20 +2,14 @@ import argparse
 import glob
 import json
 import os, sys
-import warnings
 from concurrent.futures import ProcessPoolExecutor
 from itertools import repeat
 import multiprocessing as mp
+from pathlib import Path
 import numpy as np
-import pandas as pd
 import torch
-from plyfile import PlyData, PlyElement
 
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
-# Add directories to sys.path
-sys.path.append(current_dir)
-sys.path.append(parent_dir)
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from datasets.meta_data.scannet200_constants import VALID_CLASS_IDS_200
 
@@ -43,90 +37,19 @@ def vertex_normal(vertex, face):
     return nv
 
 
-# def read_plymesh(filepath):
-#     """Read ply file and return it as numpy array. Returns None if emtpy."""
-#     with open(filepath, 'rb') as f:
-#         plydata = plyfile.PlyData.read(f)
-#     if plydata.elements:
-#         vertices = pd.DataFrame(plydata['vertex'].data).values
-#         faces = np.stack(plydata['face'].data['vertex_indices'], axis=0)
-#         return vertices, faces
-
-
 def read_plymesh(filepath):
     """Read ply file and return it as numpy array. Returns None if emtpy."""
+    import pandas as pd
+    from plyfile import PlyData
+
     with open(filepath, "rb") as f:
         plydata = PlyData.read(f)
     if plydata.elements:
         vertices = pd.DataFrame(plydata["vertex"].data).values
         faces = np.stack(plydata['face'].data['vertex_indices'], axis=0)
-        # faces = np.array([f[0] for f in plydata["face"].data])
         return vertices, faces
     else:
         raise EOFError
-
-
-def save_plymesh(vertices, faces, filename, verbose=True, with_label=True):
-    """Save an RGB point cloud as a PLY file.
-
-    Args:
-      points_3d: Nx6 matrix where points_3d[:, :3] are the XYZ coordinates and points_3d[:, 4:] are
-          the RGB values. If Nx3 matrix, save all points with [128, 128, 128] (gray) color.
-    """
-    assert vertices.ndim == 2
-    if with_label:
-        if vertices.shape[1] == 7:
-            python_types = (float, float, float, int, int, int, int)
-            npy_types = [
-                ("x", "f4"),
-                ("y", "f4"),
-                ("z", "f4"),
-                ("red", "u1"),
-                ("green", "u1"),
-                ("blue", "u1"),
-                ("label", "u4"),
-            ]
-
-        if vertices.shape[1] == 8:
-            python_types = (float, float, float, int, int, int, int, int)
-            npy_types = [
-                ("x", "f4"),
-                ("y", "f4"),
-                ("z", "f4"),
-                ("red", "u1"),
-                ("green", "u1"),
-                ("blue", "u1"),
-                ("label", "u4"),
-                ("instance_id", "u4"),
-            ]
-
-    else:
-        if vertices.shape[1] == 3:
-            gray_concat = np.tile(np.array([128], dtype=np.uint8), (vertices.shape[0], 3))
-            vertices = np.hstack((vertices, gray_concat))
-        elif vertices.shape[1] == 6:
-            python_types = (float, float, float, int, int, int)
-            npy_types = [("x", "f4"), ("y", "f4"), ("z", "f4"), ("red", "u1"), ("green", "u1"), ("blue", "u1")]
-        else:
-            pass
-
-    vertices_list = []
-    for row_idx in range(vertices.shape[0]):
-        cur_point = vertices[row_idx]
-        vertices_list.append(tuple(dtype(point) for dtype, point in zip(python_types, cur_point)))
-    vertices_array = np.array(vertices_list, dtype=npy_types)
-    elements = [PlyElement.describe(vertices_array, "vertex")]
-
-    if faces is not None:
-        faces_array = np.empty(len(faces), dtype=[("vertex_indices", "i4", (3,))])
-        faces_array["vertex_indices"] = faces
-        elements += [PlyElement.describe(faces_array, "face")]
-
-    # Write
-    PlyData(elements).write(filename)
-
-    if verbose is True:
-        print("Saved point cloud to: %s" % filename)
 
 
 # Map the raw category id to the point cloud
@@ -148,33 +71,22 @@ def point_indices_from_group(points, seg_indices, group, labels_pd, CLASS_IDs):
     return points[point_IDs], point_IDs[0], label_id
 
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-IGNORE_INDEX = -1
-
 CLOUD_FILE_PFIX = "_vh_clean_2"
 SEGMENTS_FILE_PFIX = ".0.010000.segs.json"
 AGGREGATIONS_FILE_PFIX = ".aggregation.json"
 CLASS_IDs = VALID_CLASS_IDS_200
 
 NORMALIZED_CKASS_IDS_200 = [-100 for _ in range(1192)]
-REVERSE_NORMALIZED_CKASS_IDS_200 = [-100 for _ in range(200)]
 
 count_id = 2
 for i, cls_id in enumerate(VALID_CLASS_IDS_200):
     if cls_id == 1:  # wall
         NORMALIZED_CKASS_IDS_200[cls_id] = 0
-        REVERSE_NORMALIZED_CKASS_IDS_200[0] = cls_id
     elif cls_id == 3:  # floor
         NORMALIZED_CKASS_IDS_200[cls_id] = 1
-        REVERSE_NORMALIZED_CKASS_IDS_200[1] = cls_id
     else:
         NORMALIZED_CKASS_IDS_200[cls_id] = count_id
-        REVERSE_NORMALIZED_CKASS_IDS_200[count_id] = cls_id
         count_id += 1
-
-REVERSE_NORMALIZED_CKASS_IDS_200_np = np.array(REVERSE_NORMALIZED_CKASS_IDS_200)
-np.save("reverse_norm_ids.npy", REVERSE_NORMALIZED_CKASS_IDS_200_np)
-
 
 
 def handle_process(scene_path, output_path, labels_pd, train_scenes, val_scenes):
@@ -182,7 +94,6 @@ def handle_process(scene_path, output_path, labels_pd, train_scenes, val_scenes)
     mesh_path = os.path.join(scene_path, f"{scene_id}{CLOUD_FILE_PFIX}.ply")
     segments_file = os.path.join(scene_path, f"{scene_id}{CLOUD_FILE_PFIX}{SEGMENTS_FILE_PFIX}")
     aggregations_file = os.path.join(scene_path, f"{scene_id}{AGGREGATIONS_FILE_PFIX}")
-    info_file = os.path.join(scene_path, f"{scene_id}.txt")
 
     if scene_id in train_scenes:
         output_file = os.path.join(output_path, "train", f"{scene_id}.pth")
@@ -196,28 +107,11 @@ def handle_process(scene_path, output_path, labels_pd, train_scenes, val_scenes)
 
     print("Processing: ", scene_id, "in ", split_name)
 
-    # Rotating the mesh to axis aligned
-    info_dict = {}
-    with open(info_file) as f:
-        for line in f:
-            (key, val) = line.split(" = ")
-            info_dict[key] = np.fromstring(val, sep=" ")
-
-    # if "axisAlignment" not in info_dict:
-    #     rot_matrix = np.identity(4)
-    # else:
-    #     rot_matrix = info_dict["axisAlignment"].reshape(4, 4)
-
     pointcloud, faces_array = read_plymesh(mesh_path)
     points = pointcloud[:, :3]
     colors = pointcloud[:, 3:6]
-    # alphas = pointcloud[:, -1]
 
-    # Rotate PC to axis aligned
-    # r_points = pointcloud[:, :3].transpose() # type: ignore
-    # r_points = np.append(r_points, np.ones((1, r_points.shape[1])), axis=0)
-    # r_points = np.dot(rot_matrix, r_points)
-    # pointcloud = np.append(r_points.transpose()[:, :3], pointcloud[:, 3:], axis=1) # type: ignore
+    # Keep mesh coordinates in the sensor world frame used by the RGB-D poses.
 
     # Load segments file
     with open(segments_file) as f:
@@ -225,25 +119,28 @@ def handle_process(scene_path, output_path, labels_pd, train_scenes, val_scenes)
         seg_indices = np.array(segments["segIndices"])
 
     # Load Aggregations file
-    with open(aggregations_file) as f:
-        aggregation = json.load(f)
-        seg_groups = np.array(aggregation["segGroups"])
+    if split_name == "test" and not os.path.exists(aggregations_file):
+        seg_groups = []
+    else:
+        with open(aggregations_file) as f:
+            aggregation = json.load(f)
+            seg_groups = aggregation["segGroups"]
 
     # Generate new labels
-    labelled_pc = np.zeros((pointcloud.shape[0], 1))
-    instance_ids = np.zeros((pointcloud.shape[0], 1))
+    labelled_pc = np.full((pointcloud.shape[0], 1), -100, dtype=np.int64)
+    instance_ids = np.full((pointcloud.shape[0], 1), -1, dtype=np.int64)
     for group in seg_groups:
-        segment_points, p_inds, label_id = point_indices_from_group(
+        _, p_inds, label_id = point_indices_from_group(
             pointcloud, seg_indices, group, labels_pd, CLASS_IDs
         )
 
-        # labelled_pc[p_inds] = label_id
         labelled_pc[p_inds] = NORMALIZED_CKASS_IDS_200[label_id]
         instance_ids[p_inds] = group["id"]
 
     labelled_pc = labelled_pc.astype(int)
     instance_ids = instance_ids.astype(int)
 
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     torch.save(
         {
             'coords': points,
@@ -258,6 +155,8 @@ def handle_process(scene_path, output_path, labels_pd, train_scenes, val_scenes)
 
 
 if __name__ == "__main__":
+    import pandas as pd
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_root", default='/data/disk1/data/scannet/scans',
                         help="Path to the ScanNet dataset containing scene folders")
@@ -292,29 +191,12 @@ if __name__ == "__main__":
 
     # Load scene paths
     scene_paths = sorted(glob.glob(config.dataset_root + "/*"))
-    
-    
-    with ProcessPoolExecutor(max_workers=mp.cpu_count()) as executor:
+
+
+    with ProcessPoolExecutor(max_workers=config.num_workers) as executor:
         # Load scene paths
-        scene_paths = scene_paths
 
         # Preprocess data.
         print('Processing scenes...')
-        # pool = ProcessPoolExecutor(max_workers=mp.cpu_count())
-        # pool = ProcessPoolExecutor(max_workers=1)
         _ = list(executor.map(handle_process, scene_paths, repeat(config.output_root), repeat(labels_pd),
                               repeat(train_scenes), repeat(val_scenes)))
-
-    # # Preprocess data.
-    # pool = ProcessPoolExecutor(max_workers=config.num_workers)
-    # print("Processing scenes...")
-    # _ = list(
-    #     pool.map(
-    #         handle_process,
-    #         scene_paths,
-    #         repeat(config.output_root),
-    #         repeat(labels_pd),
-    #         repeat(train_scenes),
-    #         repeat(val_scenes),
-    #     )
-    # )

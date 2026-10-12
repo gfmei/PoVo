@@ -1,0 +1,3 @@
+-r requirements.txt
+pytest
+hilbertcurve==2.0.5
